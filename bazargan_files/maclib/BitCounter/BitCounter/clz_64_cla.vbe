@@ -1,0 +1,166 @@
+
+-- ### -------------------------------------------------------------- ###
+-- # file	: clz_64_cla.vbe					#
+-- # date	: May 19 2014						#
+-- # version	: v1.2							#
+-- #									#
+-- # origin	: this description has been developed at LIP6		#
+-- #		  University Paris 6 - Pierre et Marie Curie		#
+-- #		  4 Place Jussieu 75252 Paris Cedex 05 - France		#
+-- #									#
+-- # descr.	: data flow description of a :				#
+-- #		  64-bit Leading Zero Counter				#
+-- #		  (Kogge-Stone scheme)					#
+-- #									#
+-- # authors	: Pirouz Bazargan Sabet					#
+-- ### -------------------------------------------------------------- ###
+
+entity CLZ_64_CLA is
+
+port
+  (
+  signal   OPR          : in    bit_vector ( 63 downto  0)    ;-- operand
+
+  signal   BUSY         : out   bit                           ;-- busy
+  signal   DONE         : out   bit                           ;-- done
+
+  signal   RES          : out   bit_vector ( 63 downto  0)    ;-- result
+  signal   CLD          : out   bit_vector (  6 downto  0)     -- result
+  );
+
+end CLZ_64_CLA ;
+
+-- ### -------------------------------------------------------------- ###
+-- #   internal description - contains the following sections:		#
+-- #									#
+-- #      - internal signal declarations				#
+-- #      - signals' expression						#
+-- ### -------------------------------------------------------------- ###
+
+architecture BEHAVIOUR of CLZ_64_CLA is
+
+signal   OPR_SX       : bit_vector ( 63 downto  0)         ;-- operand
+
+signal   PR0_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR1_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR2_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR3_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR4_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR5_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR6_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+
+signal   RES_SX       : bit_vector ( 63 downto  0)         ;-- result
+
+signal   CLD_6_SX     : bit                                ;-- result
+signal   CLD_5_SX     : bit                                ;-- result
+signal   CLD_4_SX     : bit                                ;-- result
+signal   CLD_3_SX     : bit                                ;-- result
+signal   CLD_2_SX     : bit                                ;-- result
+signal   CLD_1_SX     : bit                                ;-- result
+signal   CLD_0_SX     : bit                                ;-- result
+
+begin
+
+	-- ### ------------------------------------------------------ ###
+	-- #   operand							#
+	-- ### ------------------------------------------------------ ###
+
+OPR_SX     <= OPR ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   propagate						#
+	-- ### ------------------------------------------------------ ###
+
+PR0_SX     <= not OPR_SX ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   propagate						#
+	-- ### ------------------------------------------------------ ###
+
+PR1_SX     <=     PR0_SX and ( '1'        & PR0_SX ( 63 downto  1)) ;
+PR2_SX     <=     PR1_SX and (B"11"       & PR1_SX ( 63 downto  2)) ;
+PR3_SX     <=     PR2_SX and (B"1111"     & PR2_SX ( 63 downto  4)) ;
+PR4_SX     <=     PR3_SX and (X"ff"       & PR3_SX ( 63 downto  8)) ;
+PR5_SX     <=     PR4_SX and (X"ffff"     & PR4_SX ( 63 downto 16)) ;
+PR6_SX     <=     PR5_SX and (X"ffffffff" & PR5_SX ( 63 downto 32)) ;
+
+RES_SX     <=     OPR_SX and ( '1'        & PR6_SX ( 63 downto  1)) ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   encode							#
+	-- ### ------------------------------------------------------ ###
+
+CLD_6_SX   <= PR6_SX ( 0) ;
+
+CLD_5_SX   <= RES_SX (31) or RES_SX (30) or RES_SX (29) or RES_SX (28) or
+              RES_SX (27) or RES_SX (26) or RES_SX (25) or RES_SX (24) or
+              RES_SX (23) or RES_SX (22) or RES_SX (21) or RES_SX (20) or
+              RES_SX (19) or RES_SX (18) or RES_SX (17) or RES_SX (16) or
+              RES_SX (15) or RES_SX (14) or RES_SX (13) or RES_SX (12) or
+              RES_SX (11) or RES_SX (10) or RES_SX ( 9) or RES_SX ( 8) or
+              RES_SX ( 7) or RES_SX ( 6) or RES_SX ( 5) or RES_SX ( 4) or
+              RES_SX ( 3) or RES_SX ( 2) or RES_SX ( 1) or RES_SX ( 0)   ;
+
+CLD_4_SX   <= RES_SX (47) or RES_SX (46) or RES_SX (45) or RES_SX (44) or
+              RES_SX (43) or RES_SX (42) or RES_SX (41) or RES_SX (40) or
+              RES_SX (39) or RES_SX (38) or RES_SX (37) or RES_SX (36) or
+              RES_SX (35) or RES_SX (34) or RES_SX (33) or RES_SX (32) or
+              RES_SX (15) or RES_SX (14) or RES_SX (13) or RES_SX (12) or
+              RES_SX (11) or RES_SX (10) or RES_SX ( 9) or RES_SX ( 8) or
+              RES_SX ( 7) or RES_SX ( 6) or RES_SX ( 5) or RES_SX ( 4) or
+              RES_SX ( 3) or RES_SX ( 2) or RES_SX ( 1) or RES_SX ( 0)   ;
+
+CLD_3_SX   <= RES_SX (55) or RES_SX (54) or RES_SX (53) or RES_SX (52) or
+              RES_SX (51) or RES_SX (50) or RES_SX (49) or RES_SX (48) or
+              RES_SX (39) or RES_SX (38) or RES_SX (37) or RES_SX (36) or
+              RES_SX (35) or RES_SX (34) or RES_SX (33) or RES_SX (32) or
+              RES_SX (23) or RES_SX (22) or RES_SX (21) or RES_SX (20) or
+              RES_SX (19) or RES_SX (18) or RES_SX (17) or RES_SX (16) or
+              RES_SX ( 7) or RES_SX ( 6) or RES_SX ( 5) or RES_SX ( 4) or
+              RES_SX ( 3) or RES_SX ( 2) or RES_SX ( 1) or RES_SX ( 0)   ;
+
+CLD_2_SX   <= RES_SX (59) or RES_SX (58) or RES_SX (57) or RES_SX (56) or
+              RES_SX (51) or RES_SX (50) or RES_SX (49) or RES_SX (48) or
+              RES_SX (43) or RES_SX (42) or RES_SX (41) or RES_SX (40) or
+              RES_SX (35) or RES_SX (34) or RES_SX (33) or RES_SX (32) or
+              RES_SX (27) or RES_SX (26) or RES_SX (25) or RES_SX (24) or
+              RES_SX (19) or RES_SX (18) or RES_SX (17) or RES_SX (16) or
+              RES_SX (11) or RES_SX (10) or RES_SX ( 9) or RES_SX ( 8) or
+              RES_SX ( 3) or RES_SX ( 2) or RES_SX ( 1) or RES_SX ( 0)   ;
+
+CLD_1_SX   <= RES_SX (61) or RES_SX (60) or RES_SX (57) or RES_SX (56) or
+              RES_SX (53) or RES_SX (52) or RES_SX (49) or RES_SX (48) or
+              RES_SX (45) or RES_SX (44) or RES_SX (41) or RES_SX (40) or
+              RES_SX (37) or RES_SX (36) or RES_SX (33) or RES_SX (32) or
+              RES_SX (29) or RES_SX (28) or RES_SX (25) or RES_SX (24) or
+              RES_SX (21) or RES_SX (20) or RES_SX (17) or RES_SX (16) or
+              RES_SX (13) or RES_SX (12) or RES_SX ( 9) or RES_SX ( 8) or
+              RES_SX ( 5) or RES_SX ( 4) or RES_SX ( 1) or RES_SX ( 0)   ;
+
+CLD_0_SX   <= RES_SX (62) or RES_SX (60) or RES_SX (58) or RES_SX (56) or
+              RES_SX (54) or RES_SX (52) or RES_SX (50) or RES_SX (48) or
+              RES_SX (46) or RES_SX (44) or RES_SX (42) or RES_SX (40) or
+              RES_SX (38) or RES_SX (36) or RES_SX (34) or RES_SX (32) or
+              RES_SX (30) or RES_SX (28) or RES_SX (26) or RES_SX (24) or
+              RES_SX (22) or RES_SX (20) or RES_SX (18) or RES_SX (16) or
+              RES_SX (14) or RES_SX (12) or RES_SX (10) or RES_SX ( 8) or
+              RES_SX ( 6) or RES_SX ( 4) or RES_SX ( 2) or RES_SX ( 0)   ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs							#
+	-- ### ------------------------------------------------------ ###
+
+RES        <= RES_SX   ;
+CLD        <= CLD_6_SX & CLD_5_SX & CLD_4_SX & CLD_3_SX &
+              CLD_2_SX & CLD_1_SX & CLD_0_SX ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs :						#
+	-- #     - busy							#
+	-- #     - done							#
+	-- ### ------------------------------------------------------ ###
+
+BUSY       <= '0';
+DONE       <= '1';
+
+end;

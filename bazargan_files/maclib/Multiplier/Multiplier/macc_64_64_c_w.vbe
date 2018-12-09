@@ -1,0 +1,1175 @@
+
+-- ### -------------------------------------------------------------- ###
+-- # file	: macc_64_64_c_w.vbe					#
+-- # date	: May  7 2014						#
+-- # version	: v1.2							#
+-- #									#
+-- # origin	: this description has been developed at LIP6		#
+-- #		  University Paris 6 - Pierre et Marie Curie		#
+-- #		  4 Place Jussieu 75252 Paris Cedex 05 - France		#
+-- #									#
+-- # descr.	: data flow description of a :				#
+-- #		  64 by 64 Bits Parallel Signed/Unsigned Multiplier-	#
+-- #		  Adder/Subtractor					#
+-- #		  (Wallace reduction tree)				#
+-- #									#
+-- # authors	: Pirouz Bazargan Sabet					#
+-- ### -------------------------------------------------------------- ###
+
+entity MACC_64_64_C_W is
+
+port
+  (
+  signal   XOPR         : in    bit_vector ( 63 downto  0)    ;-- operand
+  signal   YOPR         : in    bit_vector ( 63 downto  0)    ;-- operand
+  signal   ZOPR         : in    bit_vector (127 downto  0)    ;-- operand
+
+  signal   SGND         : in    bit                           ;-- signed
+  signal   SUB          : in    bit                           ;-- sub/add
+
+  signal   BUSY         : out   bit                           ;-- busy
+  signal   DONE         : out   bit                           ;-- done
+
+  signal   RESLT        : out   bit_vector (127 downto  0)     -- result
+  );
+
+end;
+
+-- ### -------------------------------------------------------------- ###
+-- #   internal description - contains the following sections:		#
+-- #									#
+-- #      - internal signal declarations				#
+-- #      - signals' expression						#
+-- #									#
+-- #   Each signal or register is suffixed by two letters.		#
+-- #									#
+-- #   The first letter identifies the type of the signal :		#
+-- #     - R : a register sampling on the clock's rising  edge		#
+-- #     - F : a register sampling on the clock's falling edge		#
+-- #     - S : signal							#
+-- #									#
+-- #   The second letter is X						#
+-- ### -------------------------------------------------------------- ###
+
+architecture BEHAVIOUR of MACC_64_64_C_W is
+
+signal   YSGN_SX      : bit                                ;
+signal   XSGN_SX      : bit                                ;
+signal   XXPP_SX      : bit                                ;
+signal   ZINV_SX      : bit                                ;
+
+signal   XEXT_SX      : bit_vector ( 63 downto  0)         ;-- x op sign ext
+signal   XMUL_SX      : bit_vector ( 63 downto  0)         ;-- operand
+signal   YMUL_SX      : bit_vector ( 63 downto  0)         ;-- operand
+signal   ZMUL_SX      : bit_vector (127 downto  0)         ;-- operand
+
+signal   XX00MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX01MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX02MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX03MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX04MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX05MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX06MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX07MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX08MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX09MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX10MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX11MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX12MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX13MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX14MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX15MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX16MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX17MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX18MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX19MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX20MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX21MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX22MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX23MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX24MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX25MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX26MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX27MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX28MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX29MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX30MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX31MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX32MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX33MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX34MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX35MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX36MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX37MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX38MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX39MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX40MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX41MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX42MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX43MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX44MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX45MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX46MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX47MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX48MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX49MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX50MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX51MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX52MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX53MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX54MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX55MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX56MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX57MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX58MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX59MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX60MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX61MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX62MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+signal   XX63MUL_SX   : bit_vector (127 downto  0)         ;-- ext operand
+
+signal   PP00MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP01MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP02MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP03MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP04MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP05MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP06MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP07MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP08MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP09MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP10MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP11MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP12MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP13MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP14MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP15MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP16MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP17MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP18MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP19MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP20MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP21MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP22MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP23MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP24MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP25MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP26MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP27MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP28MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP29MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP30MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP31MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP32MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP33MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP34MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP35MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP36MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP37MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP38MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP39MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP40MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP41MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP42MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP43MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP44MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP45MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP46MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP47MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP48MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP49MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP50MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP51MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP52MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP53MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP54MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP55MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP56MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP57MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP58MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP59MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP60MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP61MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP62MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PP63MUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+
+signal   PPXXMUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+signal   PPZZMUL_SX   : bit_vector (127 downto  0)         ;-- partial product
+
+signal   S00MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S01MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S02MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S03MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S04MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S05MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S06MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S07MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S08MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S09MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S10MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S11MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S12MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S13MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S14MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S15MUL0_SX   : bit_vector (127 downto  0)         ;-- partial sum
+
+signal   C00MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C01MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C02MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C03MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C04MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C05MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C06MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C07MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C08MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C09MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C10MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C11MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C12MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C13MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C14MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C15MUL0_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   S00MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S01MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S02MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S03MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S04MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S05MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S06MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S07MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S08MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S09MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S10MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S11MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S12MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S13MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S14MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S15MUL1_SX   : bit_vector (127 downto  0)         ;-- partial sum
+
+signal   C00MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C01MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C02MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C03MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C04MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C05MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C06MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C07MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C08MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C09MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C10MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C11MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C12MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C13MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C14MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C15MUL1_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   S00MUL2_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S01MUL2_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S02MUL2_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S03MUL2_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S04MUL2_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S05MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   S06MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   S07MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   C00MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C01MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C02MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C03MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C04MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C05MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C06MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C07MUL2_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   S00MUL3_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S01MUL3_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S02MUL3_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S03MUL3_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S04MUL3_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S05MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   S06MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   S07MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   C00MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C01MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C02MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C03MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C04MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C05MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C06MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C07MUL3_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   S00MUL4_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S01MUL4_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S02MUL4_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S03MUL4_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S04MUL4_SX   : bit_vector (127 downto  0)         ;-- partial sum
+
+signal   C00MUL4_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C01MUL4_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C02MUL4_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C03MUL4_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C04MUL4_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   S00MUL5_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S01MUL5_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S02MUL5_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S03MUL5_SX   : bit_vector (127 downto  0)         ;-- partial sum
+
+signal   C00MUL5_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C01MUL5_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C02MUL5_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C03MUL5_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   S00MUL6_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S01MUL6_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S02MUL6_SX   : bit_vector (127 downto  0)         ;-- partial sum
+
+signal   C00MUL6_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C01MUL6_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C02MUL6_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   S00MUL7_SX   : bit_vector (127 downto  0)         ;-- partial sum
+signal   S01MUL7_SX   : bit_vector (127 downto  0)         ;-- partial sum
+
+signal   C00MUL7_SX   : bit_vector (127 downto  0)         ;-- partial cry
+signal   C01MUL7_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   S00MUL8_SX   : bit_vector (127 downto  0)         ;-- partial sum
+
+signal   C00MUL8_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   S00MUL9_SX   : bit_vector (127 downto  0)         ;-- partial sum
+
+signal   C00MUL9_SX   : bit_vector (127 downto  0)         ;-- partial cry
+
+signal   PR0MUL_SX    : bit_vector (127 downto  0)         ;-- propagate
+signal   PR1MUL_SX    : bit_vector (127 downto  0)         ;-- propagate
+signal   PR2MUL_SX    : bit_vector (127 downto  0)         ;-- propagate
+signal   PR3MUL_SX    : bit_vector (127 downto  0)         ;-- propagate
+signal   PR4MUL_SX    : bit_vector (127 downto  0)         ;-- propagate
+signal   PR5MUL_SX    : bit_vector (127 downto  0)         ;-- propagate
+signal   PR6MUL_SX    : bit_vector (127 downto  0)         ;-- propagate
+signal   PR7MUL_SX    : bit_vector (127 downto  0)         ;-- propagate
+
+signal   GN0MUL_SX    : bit_vector (127 downto  0)         ;-- generate
+signal   GN1MUL_SX    : bit_vector (127 downto  0)         ;-- generate
+signal   GN2MUL_SX    : bit_vector (127 downto  0)         ;-- generate
+signal   GN3MUL_SX    : bit_vector (127 downto  0)         ;-- generate
+signal   GN4MUL_SX    : bit_vector (127 downto  0)         ;-- generate
+signal   GN5MUL_SX    : bit_vector (127 downto  0)         ;-- generate
+signal   GN6MUL_SX    : bit_vector (127 downto  0)         ;-- generate
+signal   GN7MUL_SX    : bit_vector (127 downto  0)         ;-- generate
+
+signal   CYIMUL_SX    : bit_vector (127 downto  0)         ;-- carry
+signal   CRYMUL_SX    : bit_vector (127 downto  0)         ;-- carry
+signal   SUMMUL_SX    : bit_vector (127 downto  0)         ;-- sum
+
+signal   RMUL_SX      : bit_vector (127 downto  0)         ;-- result
+
+signal   ZERO_SX      : bit_vector (127 downto  0)         ;
+
+begin
+
+-- ### -------------------------------------------------------------- ###
+-- #   internal description						#
+-- #									#
+-- #   The following lines describes in details an implementation of	#
+-- #   a fully parallel 64-bit by 64-bit multiplier-adder/subtractor.	#
+-- #									#
+-- #   The description can perform signed/unsigned multiplications.	#
+-- #   The result of the multiplication may be added to or subtracted	#
+-- #   from a third operand.						#
+-- #									#
+-- #   Unsigned multiply-add :						#
+-- #     The final result is    R = Z + (X * Y)				#
+-- #									#
+-- #     Proceed to a unsigned multiplication of X by Y.		#
+-- #     X operand is zero extended.					#
+-- #									#
+-- #   Signed multiply-add :						#
+-- #     The final result is    R = Z + (X * Y)				#
+-- #     Two situations may happen.					#
+-- #									#
+-- #     Y >= 0 : proceed to an unsigned multiplication of X by Y.	#
+-- #              X operand is sign extended.				#
+-- #									#
+-- #     Y <  0 : Then							#
+-- #              R =           Z      + (X *      Y          )		#
+-- #              R =           Z      - (X * (   -Y    )     )		#
+-- #              R =  -  ((   -Z    ) + (X * (   -Y    )     ))	#
+-- #              R =  -  ((not Z + 1) + (X * (   -Y    )     ))	#
+-- #              R =  -  ((not Z + 1) + (X * (   -Y    )     ))	#
+-- #              R =  -  ((not Z + 1) + (X * (not Y + 1)     ))	#
+-- #              R =  -  ((not Z + 1) + (X * (not Y    )  + X))	#
+-- #              R =  -  ((not Z + 1) + (X * (not Y    )) + X )	#
+-- #              R =  -  ((not Z    ) + (X * (not Y    )) + X ) - 1	#
+-- #		     							#
+-- #              R = not ((not Z    ) + (X * (not Y    )) + X )	#
+-- #		     							#
+-- #              Proceed to an unsigned multiplication of X by		#
+-- #              "not Y".						#
+-- #              X operand is sign extended.				#
+-- #              Two extra partial products are created : "not Z"	#
+-- #              and X.						#
+-- #									#
+-- #   Unsigned multiply-subtract :					#
+-- #     The final result is    R = Z - (X * Y)				#
+-- #									#
+-- #              R =           Z      - (X *      Y          )		#
+-- #              R =  -  ((   -Z    ) + (X *      Y          ))	#
+-- #              R =  -  ((not Z + 1) + (X *      Y          ))	#
+-- #              R =  -  ((not Z    ) + (X *      Y     )     ) - 1	#
+-- #		     							#
+-- #              R = not ((not Z    ) + (X *      Y     )     )	#
+-- #		     							#
+-- #              Proceed to an unsigned multiplication of X by		#
+-- #              Y      .						#
+-- #              X operand is sign extended.				#
+-- #              An  extra partial product  is  created : "not Z".	#
+-- #									#
+-- #   Signed multiply-subtract :					#
+-- #     The final result is    R = Z - (X * Y)				#
+-- #     Two situations may happen.					#
+-- #									#
+-- #     Y >= 0 : Then							#
+-- #              R =           Z      - (X *      Y          )		#
+-- #              R =  -  ((   -Z    ) + (X *      Y          ))	#
+-- #              R =  -  ((not Z + 1) + (X *      Y          ))	#
+-- #              R =  -  ((not Z    ) + (X *      Y     )     ) - 1	#
+-- #		     							#
+-- #              R = not ((not Z    ) + (X *      Y     )     )	#
+-- #		     							#
+-- #              Proceed to an unsigned multiplication of X by		#
+-- #              Y      .						#
+-- #              The X operand is sign extended.			#
+-- #              An  extra partial product  is  created : "not Z".	#
+-- #									#
+-- #     Y < 0  : Then							#
+-- #              R =           Z      - (X *      Y          )		#
+-- #              R =           Z      + (X * (   -Y    )     )		#
+-- #              R =           Z      + (X * (not Y + 1)     )		#
+-- #              R =           Z      + (X * (not Y    )  + X)		#
+-- #		     							#
+-- #              R =           Z      + (X * (not Y    )) + X		#
+-- #		     							#
+-- #              Proceed to an unsigned multiplication of X by		#
+-- #              "not Y".						#
+-- #              X operand is sign extended.				#
+-- #              Two extra partial products are created :      Z	#
+-- #              and X.						#
+-- #									#
+-- #   Unsigned multiply :						#
+-- #     Let P be the multiplication's result : P = A * B		#
+-- #									#
+-- #     First, the A operand is extended to 128 bits. Then 64 partial	#
+-- #     products are produced. The partial product Pi is either the	#
+-- #     extended A operand shifted by i positions to the right if the	#
+-- #     corresponding weight of the B operand is 1 or, 0 if the	#
+-- #     corresponding weight of the B operand is 0.			#
+-- #									#
+-- #   Then, these 64 partial products and the potential two extra	#
+-- #   partial products and are summed through a tree of Carry Save	#
+-- #   Adders. Each layer of Carry Save Adder makes a 3 to 2 reduction.	#
+-- #									#
+-- #   Ten layers of Carry Save Adders are required to reduce the	#
+-- #   number of partial products to 2.					#
+-- #									#
+-- #   Then, the two resulting numbers are reduced to the final result	#
+-- #   through a classic adder and inverted if necessary.		#
+-- ### -------------------------------------------------------------- ###
+
+-- ### -------------------------------------------------------------- ###
+-- #   reduction scheme :						#
+-- #									#
+-- #   First the 64 regular partial products are reduced de 32 using	#
+-- #   two layers of CSA. Then, the following reduction scheme is	#
+-- #   applied.								#
+-- #									#
+-- #   P : reduced partial products					#
+-- #   X : extra partial product					#
+-- #   Z : third operand						#
+-- #   | : transmition							#
+-- #									#
+-- #       PPPP  PPPP  PPPP  PPPP     PPPP  PPPP  PPPP  PPPP X   Z	#
+-- #      ---------------------------------------------------------	#
+-- #       xxxx  xxxx  xxxx  xxxx     xxxx  xxxx  xxxx  xxxx x   x	#
+-- #    2  | xx  | xx  | xx  | xx     | xx  | xx  | xx  | xx |   |	#
+-- #    3   xx    xx    xx    xx       xx    xx    xx    xx  |   |	#
+-- #    4   |   xx      |   xx            xx    xx         xx    |	#
+-- #    5     xx          xx                  xx      xx         |	#
+-- #    6           xx            xx                       xx		#
+-- #    7                 xx                    xx			#
+-- #    8                 |          xx					#
+-- #    9                      xx					#
+-- ### -------------------------------------------------------------- ###
+
+	-- ### ------------------------------------------------------ ###
+	-- #   constants						#
+	-- ### ------------------------------------------------------ ###
+
+ZERO_SX    <= X"00000000_00000000_00000000_00000000" ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   operands							#
+	-- ### ------------------------------------------------------ ###
+
+XXPP_SX    <=           SGND and  YOPR (63)  ;
+
+XSGN_SX    <=           SGND and  XOPR (63)  ;
+YSGN_SX    <=           SGND and  YOPR (63)  ;
+ZINV_SX    <= SUB xor  (SGND and  YOPR (63)) ;
+
+XEXT_SX    <= X"00000000_00000000" when (XSGN_SX = '0') else
+              X"ffffffff_ffffffff" ;
+
+XMUL_SX    <= XOPR                                                    ;
+YMUL_SX    <= YOPR                 when (YSGN_SX = '0') else not YOPR ;
+ZMUL_SX    <= ZOPR                 when (ZINV_SX = '0') else not ZOPR ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   extended operands					#
+	-- ### ------------------------------------------------------ ###
+
+XX00MUL_SX <= XEXT_SX (63 downto 0) & XMUL_SX                               ;
+XX01MUL_SX <= XEXT_SX (62 downto 0) & XMUL_SX &                       B"0"  ;
+XX02MUL_SX <= XEXT_SX (61 downto 0) & XMUL_SX &                       B"00" ;
+XX03MUL_SX <= XEXT_SX (60 downto 0) & XMUL_SX &                       B"000";
+XX04MUL_SX <= XEXT_SX (59 downto 0) & XMUL_SX & X"0"                        ;
+XX05MUL_SX <= XEXT_SX (58 downto 0) & XMUL_SX & X"0"                & B"0"  ;
+XX06MUL_SX <= XEXT_SX (57 downto 0) & XMUL_SX & X"0"                & B"00" ;
+XX07MUL_SX <= XEXT_SX (56 downto 0) & XMUL_SX & X"0"                & B"000";
+XX08MUL_SX <= XEXT_SX (55 downto 0) & XMUL_SX & X"00"                       ;
+XX09MUL_SX <= XEXT_SX (54 downto 0) & XMUL_SX & X"00"               & B"0"  ;
+XX10MUL_SX <= XEXT_SX (53 downto 0) & XMUL_SX & X"00"               & B"00" ;
+XX11MUL_SX <= XEXT_SX (52 downto 0) & XMUL_SX & X"00"               & B"000";
+XX12MUL_SX <= XEXT_SX (51 downto 0) & XMUL_SX & X"000"                      ;
+XX13MUL_SX <= XEXT_SX (50 downto 0) & XMUL_SX & X"000"              & B"0"  ;
+XX14MUL_SX <= XEXT_SX (49 downto 0) & XMUL_SX & X"000"              & B"00" ;
+XX15MUL_SX <= XEXT_SX (48 downto 0) & XMUL_SX & X"000"              & B"000";
+XX16MUL_SX <= XEXT_SX (47 downto 0) & XMUL_SX & X"0000"                     ;
+XX17MUL_SX <= XEXT_SX (46 downto 0) & XMUL_SX & X"0000"             & B"0"  ;
+XX18MUL_SX <= XEXT_SX (45 downto 0) & XMUL_SX & X"0000"             & B"00" ;
+XX19MUL_SX <= XEXT_SX (44 downto 0) & XMUL_SX & X"0000"             & B"000";
+XX20MUL_SX <= XEXT_SX (43 downto 0) & XMUL_SX & X"00000"                    ;
+XX21MUL_SX <= XEXT_SX (42 downto 0) & XMUL_SX & X"00000"            & B"0"  ;
+XX22MUL_SX <= XEXT_SX (41 downto 0) & XMUL_SX & X"00000"            & B"00" ;
+XX23MUL_SX <= XEXT_SX (40 downto 0) & XMUL_SX & X"00000"            & B"000";
+XX24MUL_SX <= XEXT_SX (39 downto 0) & XMUL_SX & X"000000"                   ;
+XX25MUL_SX <= XEXT_SX (38 downto 0) & XMUL_SX & X"000000"           & B"0"  ;
+XX26MUL_SX <= XEXT_SX (37 downto 0) & XMUL_SX & X"000000"           & B"00" ;
+XX27MUL_SX <= XEXT_SX (36 downto 0) & XMUL_SX & X"000000"           & B"000";
+XX28MUL_SX <= XEXT_SX (35 downto 0) & XMUL_SX & X"0000000"                  ;
+XX29MUL_SX <= XEXT_SX (34 downto 0) & XMUL_SX & X"0000000"          & B"0"  ;
+XX30MUL_SX <= XEXT_SX (33 downto 0) & XMUL_SX & X"0000000"          & B"00" ;
+XX31MUL_SX <= XEXT_SX (32 downto 0) & XMUL_SX & X"0000000"          & B"000";
+XX32MUL_SX <= XEXT_SX (31 downto 0) & XMUL_SX & X"00000000"                 ;
+XX33MUL_SX <= XEXT_SX (30 downto 0) & XMUL_SX & X"00000000"         & B"0"  ;
+XX34MUL_SX <= XEXT_SX (29 downto 0) & XMUL_SX & X"00000000"         & B"00" ;
+XX35MUL_SX <= XEXT_SX (28 downto 0) & XMUL_SX & X"00000000"         & B"000";
+XX36MUL_SX <= XEXT_SX (27 downto 0) & XMUL_SX & X"000000000"                ;
+XX37MUL_SX <= XEXT_SX (26 downto 0) & XMUL_SX & X"000000000"        & B"0"  ;
+XX38MUL_SX <= XEXT_SX (25 downto 0) & XMUL_SX & X"000000000"        & B"00" ;
+XX39MUL_SX <= XEXT_SX (24 downto 0) & XMUL_SX & X"000000000"        & B"000";
+XX40MUL_SX <= XEXT_SX (23 downto 0) & XMUL_SX & X"0000000000"               ;
+XX41MUL_SX <= XEXT_SX (22 downto 0) & XMUL_SX & X"0000000000"       & B"0"  ;
+XX42MUL_SX <= XEXT_SX (21 downto 0) & XMUL_SX & X"0000000000"       & B"00" ;
+XX43MUL_SX <= XEXT_SX (20 downto 0) & XMUL_SX & X"0000000000"       & B"000";
+XX44MUL_SX <= XEXT_SX (19 downto 0) & XMUL_SX & X"00000000000"              ;
+XX45MUL_SX <= XEXT_SX (18 downto 0) & XMUL_SX & X"00000000000"      & B"0"  ;
+XX46MUL_SX <= XEXT_SX (17 downto 0) & XMUL_SX & X"00000000000"      & B"00" ;
+XX47MUL_SX <= XEXT_SX (16 downto 0) & XMUL_SX & X"00000000000"      & B"000";
+XX48MUL_SX <= XEXT_SX (15 downto 0) & XMUL_SX & X"000000000000"             ;
+XX49MUL_SX <= XEXT_SX (14 downto 0) & XMUL_SX & X"000000000000"     & B"0"  ;
+XX50MUL_SX <= XEXT_SX (13 downto 0) & XMUL_SX & X"000000000000"     & B"00" ;
+XX51MUL_SX <= XEXT_SX (12 downto 0) & XMUL_SX & X"000000000000"     & B"000";
+XX52MUL_SX <= XEXT_SX (11 downto 0) & XMUL_SX & X"0000000000000"            ;
+XX53MUL_SX <= XEXT_SX (10 downto 0) & XMUL_SX & X"0000000000000"    & B"0"  ;
+XX54MUL_SX <= XEXT_SX ( 9 downto 0) & XMUL_SX & X"0000000000000"    & B"00" ;
+XX55MUL_SX <= XEXT_SX ( 8 downto 0) & XMUL_SX & X"0000000000000"    & B"000";
+XX56MUL_SX <= XEXT_SX ( 7 downto 0) & XMUL_SX & X"00000000000000"           ;
+XX57MUL_SX <= XEXT_SX ( 6 downto 0) & XMUL_SX & X"00000000000000"   & B"0"  ;
+XX58MUL_SX <= XEXT_SX ( 5 downto 0) & XMUL_SX & X"00000000000000"   & B"00" ;
+XX59MUL_SX <= XEXT_SX ( 4 downto 0) & XMUL_SX & X"00000000000000"   & B"000";
+XX60MUL_SX <= XEXT_SX ( 3 downto 0) & XMUL_SX & X"000000000000000"          ;
+XX61MUL_SX <= XEXT_SX ( 2 downto 0) & XMUL_SX & X"000000000000000"  & B"0"  ;
+XX62MUL_SX <= XEXT_SX ( 1 downto 0) & XMUL_SX & X"000000000000000"  & B"00" ;
+XX63MUL_SX <= XEXT_SX (          0) & XMUL_SX & X"000000000000000"  & B"000";
+
+	-- ### ------------------------------------------------------ ###
+	-- #   partial products						#
+	-- ### ------------------------------------------------------ ###
+
+PP00MUL_SX <= XX00MUL_SX when (YMUL_SX ( 0) = '1') else ZERO_SX ; 
+PP01MUL_SX <= XX01MUL_SX when (YMUL_SX ( 1) = '1') else ZERO_SX ; 
+PP02MUL_SX <= XX02MUL_SX when (YMUL_SX ( 2) = '1') else ZERO_SX ; 
+PP03MUL_SX <= XX03MUL_SX when (YMUL_SX ( 3) = '1') else ZERO_SX ; 
+PP04MUL_SX <= XX04MUL_SX when (YMUL_SX ( 4) = '1') else ZERO_SX ; 
+PP05MUL_SX <= XX05MUL_SX when (YMUL_SX ( 5) = '1') else ZERO_SX ; 
+PP06MUL_SX <= XX06MUL_SX when (YMUL_SX ( 6) = '1') else ZERO_SX ; 
+PP07MUL_SX <= XX07MUL_SX when (YMUL_SX ( 7) = '1') else ZERO_SX ; 
+PP08MUL_SX <= XX08MUL_SX when (YMUL_SX ( 8) = '1') else ZERO_SX ; 
+PP09MUL_SX <= XX09MUL_SX when (YMUL_SX ( 9) = '1') else ZERO_SX ; 
+PP10MUL_SX <= XX10MUL_SX when (YMUL_SX (10) = '1') else ZERO_SX ; 
+PP11MUL_SX <= XX11MUL_SX when (YMUL_SX (11) = '1') else ZERO_SX ; 
+PP12MUL_SX <= XX12MUL_SX when (YMUL_SX (12) = '1') else ZERO_SX ; 
+PP13MUL_SX <= XX13MUL_SX when (YMUL_SX (13) = '1') else ZERO_SX ; 
+PP14MUL_SX <= XX14MUL_SX when (YMUL_SX (14) = '1') else ZERO_SX ; 
+PP15MUL_SX <= XX15MUL_SX when (YMUL_SX (15) = '1') else ZERO_SX ; 
+PP16MUL_SX <= XX16MUL_SX when (YMUL_SX (16) = '1') else ZERO_SX ; 
+PP17MUL_SX <= XX17MUL_SX when (YMUL_SX (17) = '1') else ZERO_SX ; 
+PP18MUL_SX <= XX18MUL_SX when (YMUL_SX (18) = '1') else ZERO_SX ; 
+PP19MUL_SX <= XX19MUL_SX when (YMUL_SX (19) = '1') else ZERO_SX ; 
+PP20MUL_SX <= XX20MUL_SX when (YMUL_SX (20) = '1') else ZERO_SX ; 
+PP21MUL_SX <= XX21MUL_SX when (YMUL_SX (21) = '1') else ZERO_SX ; 
+PP22MUL_SX <= XX22MUL_SX when (YMUL_SX (22) = '1') else ZERO_SX ; 
+PP23MUL_SX <= XX23MUL_SX when (YMUL_SX (23) = '1') else ZERO_SX ; 
+PP24MUL_SX <= XX24MUL_SX when (YMUL_SX (24) = '1') else ZERO_SX ; 
+PP25MUL_SX <= XX25MUL_SX when (YMUL_SX (25) = '1') else ZERO_SX ; 
+PP26MUL_SX <= XX26MUL_SX when (YMUL_SX (26) = '1') else ZERO_SX ; 
+PP27MUL_SX <= XX27MUL_SX when (YMUL_SX (27) = '1') else ZERO_SX ; 
+PP28MUL_SX <= XX28MUL_SX when (YMUL_SX (28) = '1') else ZERO_SX ; 
+PP29MUL_SX <= XX29MUL_SX when (YMUL_SX (29) = '1') else ZERO_SX ; 
+PP30MUL_SX <= XX30MUL_SX when (YMUL_SX (30) = '1') else ZERO_SX ; 
+PP31MUL_SX <= XX31MUL_SX when (YMUL_SX (31) = '1') else ZERO_SX ; 
+PP32MUL_SX <= XX32MUL_SX when (YMUL_SX (32) = '1') else ZERO_SX ; 
+PP33MUL_SX <= XX33MUL_SX when (YMUL_SX (33) = '1') else ZERO_SX ; 
+PP34MUL_SX <= XX34MUL_SX when (YMUL_SX (34) = '1') else ZERO_SX ; 
+PP35MUL_SX <= XX35MUL_SX when (YMUL_SX (35) = '1') else ZERO_SX ; 
+PP36MUL_SX <= XX36MUL_SX when (YMUL_SX (36) = '1') else ZERO_SX ; 
+PP37MUL_SX <= XX37MUL_SX when (YMUL_SX (37) = '1') else ZERO_SX ; 
+PP38MUL_SX <= XX38MUL_SX when (YMUL_SX (38) = '1') else ZERO_SX ; 
+PP39MUL_SX <= XX39MUL_SX when (YMUL_SX (39) = '1') else ZERO_SX ; 
+PP40MUL_SX <= XX40MUL_SX when (YMUL_SX (40) = '1') else ZERO_SX ; 
+PP41MUL_SX <= XX41MUL_SX when (YMUL_SX (41) = '1') else ZERO_SX ; 
+PP42MUL_SX <= XX42MUL_SX when (YMUL_SX (42) = '1') else ZERO_SX ; 
+PP43MUL_SX <= XX43MUL_SX when (YMUL_SX (43) = '1') else ZERO_SX ; 
+PP44MUL_SX <= XX44MUL_SX when (YMUL_SX (44) = '1') else ZERO_SX ; 
+PP45MUL_SX <= XX45MUL_SX when (YMUL_SX (45) = '1') else ZERO_SX ; 
+PP46MUL_SX <= XX46MUL_SX when (YMUL_SX (46) = '1') else ZERO_SX ; 
+PP47MUL_SX <= XX47MUL_SX when (YMUL_SX (47) = '1') else ZERO_SX ; 
+PP48MUL_SX <= XX48MUL_SX when (YMUL_SX (48) = '1') else ZERO_SX ; 
+PP49MUL_SX <= XX49MUL_SX when (YMUL_SX (49) = '1') else ZERO_SX ; 
+PP50MUL_SX <= XX50MUL_SX when (YMUL_SX (50) = '1') else ZERO_SX ; 
+PP51MUL_SX <= XX51MUL_SX when (YMUL_SX (51) = '1') else ZERO_SX ; 
+PP52MUL_SX <= XX52MUL_SX when (YMUL_SX (52) = '1') else ZERO_SX ; 
+PP53MUL_SX <= XX53MUL_SX when (YMUL_SX (53) = '1') else ZERO_SX ; 
+PP54MUL_SX <= XX54MUL_SX when (YMUL_SX (54) = '1') else ZERO_SX ; 
+PP55MUL_SX <= XX55MUL_SX when (YMUL_SX (55) = '1') else ZERO_SX ; 
+PP56MUL_SX <= XX56MUL_SX when (YMUL_SX (56) = '1') else ZERO_SX ; 
+PP57MUL_SX <= XX57MUL_SX when (YMUL_SX (57) = '1') else ZERO_SX ; 
+PP58MUL_SX <= XX58MUL_SX when (YMUL_SX (58) = '1') else ZERO_SX ; 
+PP59MUL_SX <= XX59MUL_SX when (YMUL_SX (59) = '1') else ZERO_SX ; 
+PP60MUL_SX <= XX60MUL_SX when (YMUL_SX (60) = '1') else ZERO_SX ; 
+PP61MUL_SX <= XX61MUL_SX when (YMUL_SX (61) = '1') else ZERO_SX ; 
+PP62MUL_SX <= XX62MUL_SX when (YMUL_SX (62) = '1') else ZERO_SX ; 
+PP63MUL_SX <= XX63MUL_SX when (YMUL_SX (63) = '1') else ZERO_SX ; 
+
+	-- ### ------------------------------------------------------ ###
+	-- #   extra partial products					#
+	-- ### ------------------------------------------------------ ###
+
+PPXXMUL_SX <= XX00MUL_SX when (XXPP_SX      = '1') else ZERO_SX ;
+PPZZMUL_SX <= ZMUL_SX                                           ; 
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - first   layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL0_SX <=   PP00MUL_SX (127 downto 0) xor PP01MUL_SX (127 downto 0) xor
+                PP02MUL_SX (127 downto 0) ;
+S01MUL0_SX <=   PP04MUL_SX (127 downto 0) xor PP05MUL_SX (127 downto 0) xor
+                PP06MUL_SX (127 downto 0) ;
+S02MUL0_SX <=   PP08MUL_SX (127 downto 0) xor PP09MUL_SX (127 downto 0) xor
+                PP10MUL_SX (127 downto 0) ;
+S03MUL0_SX <=   PP12MUL_SX (127 downto 0) xor PP13MUL_SX (127 downto 0) xor
+                PP14MUL_SX (127 downto 0) ;
+S04MUL0_SX <=   PP16MUL_SX (127 downto 0) xor PP17MUL_SX (127 downto 0) xor
+                PP18MUL_SX (127 downto 0) ;
+S05MUL0_SX <=   PP20MUL_SX (127 downto 0) xor PP21MUL_SX (127 downto 0) xor
+                PP22MUL_SX (127 downto 0) ;
+S06MUL0_SX <=   PP24MUL_SX (127 downto 0) xor PP25MUL_SX (127 downto 0) xor
+                PP26MUL_SX (127 downto 0) ;
+S07MUL0_SX <=   PP28MUL_SX (127 downto 0) xor PP29MUL_SX (127 downto 0) xor
+                PP30MUL_SX (127 downto 0) ;
+S08MUL0_SX <=   PP32MUL_SX (127 downto 0) xor PP33MUL_SX (127 downto 0) xor
+                PP34MUL_SX (127 downto 0) ;
+S09MUL0_SX <=   PP36MUL_SX (127 downto 0) xor PP37MUL_SX (127 downto 0) xor
+                PP38MUL_SX (127 downto 0) ;
+S10MUL0_SX <=   PP40MUL_SX (127 downto 0) xor PP41MUL_SX (127 downto 0) xor
+                PP42MUL_SX (127 downto 0) ;
+S11MUL0_SX <=   PP44MUL_SX (127 downto 0) xor PP45MUL_SX (127 downto 0) xor
+                PP46MUL_SX (127 downto 0) ;
+S12MUL0_SX <=   PP48MUL_SX (127 downto 0) xor PP49MUL_SX (127 downto 0) xor
+                PP50MUL_SX (127 downto 0) ;
+S13MUL0_SX <=   PP52MUL_SX (127 downto 0) xor PP53MUL_SX (127 downto 0) xor
+                PP54MUL_SX (127 downto 0) ;
+S14MUL0_SX <=   PP56MUL_SX (127 downto 0) xor PP57MUL_SX (127 downto 0) xor
+                PP58MUL_SX (127 downto 0) ;
+S15MUL0_SX <=   PP60MUL_SX (127 downto 0) xor PP61MUL_SX (127 downto 0) xor
+                PP62MUL_SX (127 downto 0) ;
+
+C00MUL0_SX <= ((PP00MUL_SX (126 downto 0) and PP01MUL_SX (126 downto 0)) or
+               (PP00MUL_SX (126 downto 0) and PP02MUL_SX (126 downto 0)) or
+               (PP01MUL_SX (126 downto 0) and PP02MUL_SX (126 downto 0))) & '0';
+
+C01MUL0_SX <= ((PP04MUL_SX (126 downto 0) and PP05MUL_SX (126 downto 0)) or
+               (PP04MUL_SX (126 downto 0) and PP06MUL_SX (126 downto 0)) or
+               (PP05MUL_SX (126 downto 0) and PP06MUL_SX (126 downto 0))) & '0';
+
+C02MUL0_SX <= ((PP08MUL_SX (126 downto 0) and PP09MUL_SX (126 downto 0)) or
+               (PP08MUL_SX (126 downto 0) and PP10MUL_SX (126 downto 0)) or
+               (PP09MUL_SX (126 downto 0) and PP10MUL_SX (126 downto 0))) & '0';
+
+C03MUL0_SX <= ((PP12MUL_SX (126 downto 0) and PP13MUL_SX (126 downto 0)) or
+               (PP12MUL_SX (126 downto 0) and PP14MUL_SX (126 downto 0)) or
+               (PP13MUL_SX (126 downto 0) and PP14MUL_SX (126 downto 0))) & '0';
+
+C04MUL0_SX <= ((PP16MUL_SX (126 downto 0) and PP17MUL_SX (126 downto 0)) or
+               (PP16MUL_SX (126 downto 0) and PP18MUL_SX (126 downto 0)) or
+               (PP17MUL_SX (126 downto 0) and PP18MUL_SX (126 downto 0))) & '0';
+
+C05MUL0_SX <= ((PP20MUL_SX (126 downto 0) and PP21MUL_SX (126 downto 0)) or
+               (PP20MUL_SX (126 downto 0) and PP22MUL_SX (126 downto 0)) or
+               (PP21MUL_SX (126 downto 0) and PP22MUL_SX (126 downto 0))) & '0';
+
+C06MUL0_SX <= ((PP24MUL_SX (126 downto 0) and PP25MUL_SX (126 downto 0)) or
+               (PP24MUL_SX (126 downto 0) and PP26MUL_SX (126 downto 0)) or
+               (PP25MUL_SX (126 downto 0) and PP26MUL_SX (126 downto 0))) & '0';
+
+C07MUL0_SX <= ((PP28MUL_SX (126 downto 0) and PP29MUL_SX (126 downto 0)) or
+               (PP28MUL_SX (126 downto 0) and PP30MUL_SX (126 downto 0)) or
+               (PP29MUL_SX (126 downto 0) and PP30MUL_SX (126 downto 0))) & '0';
+
+C08MUL0_SX <= ((PP32MUL_SX (126 downto 0) and PP33MUL_SX (126 downto 0)) or
+               (PP32MUL_SX (126 downto 0) and PP34MUL_SX (126 downto 0)) or
+               (PP33MUL_SX (126 downto 0) and PP34MUL_SX (126 downto 0))) & '0';
+
+C09MUL0_SX <= ((PP36MUL_SX (126 downto 0) and PP37MUL_SX (126 downto 0)) or
+               (PP36MUL_SX (126 downto 0) and PP38MUL_SX (126 downto 0)) or
+               (PP37MUL_SX (126 downto 0) and PP38MUL_SX (126 downto 0))) & '0';
+
+C10MUL0_SX <= ((PP40MUL_SX (126 downto 0) and PP41MUL_SX (126 downto 0)) or
+               (PP40MUL_SX (126 downto 0) and PP42MUL_SX (126 downto 0)) or
+               (PP41MUL_SX (126 downto 0) and PP42MUL_SX (126 downto 0))) & '0';
+
+C11MUL0_SX <= ((PP44MUL_SX (126 downto 0) and PP45MUL_SX (126 downto 0)) or
+               (PP44MUL_SX (126 downto 0) and PP46MUL_SX (126 downto 0)) or
+               (PP45MUL_SX (126 downto 0) and PP46MUL_SX (126 downto 0))) & '0';
+
+C12MUL0_SX <= ((PP48MUL_SX (126 downto 0) and PP49MUL_SX (126 downto 0)) or
+               (PP48MUL_SX (126 downto 0) and PP50MUL_SX (126 downto 0)) or
+               (PP49MUL_SX (126 downto 0) and PP50MUL_SX (126 downto 0))) & '0';
+
+C13MUL0_SX <= ((PP52MUL_SX (126 downto 0) and PP53MUL_SX (126 downto 0)) or
+               (PP52MUL_SX (126 downto 0) and PP54MUL_SX (126 downto 0)) or
+               (PP53MUL_SX (126 downto 0) and PP54MUL_SX (126 downto 0))) & '0';
+
+C14MUL0_SX <= ((PP56MUL_SX (126 downto 0) and PP57MUL_SX (126 downto 0)) or
+               (PP56MUL_SX (126 downto 0) and PP58MUL_SX (126 downto 0)) or
+               (PP57MUL_SX (126 downto 0) and PP58MUL_SX (126 downto 0))) & '0';
+
+C15MUL0_SX <= ((PP60MUL_SX (126 downto 0) and PP61MUL_SX (126 downto 0)) or
+               (PP60MUL_SX (126 downto 0) and PP62MUL_SX (126 downto 0)) or
+               (PP61MUL_SX (126 downto 0) and PP62MUL_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - second  layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL1_SX <=   S00MUL0_SX (127 downto 0) xor C00MUL0_SX (127 downto 0) xor
+                PP03MUL_SX (127 downto 0) ;
+S01MUL1_SX <=   S01MUL0_SX (127 downto 0) xor C01MUL0_SX (127 downto 0) xor
+                PP07MUL_SX (127 downto 0) ;
+S02MUL1_SX <=   S02MUL0_SX (127 downto 0) xor C02MUL0_SX (127 downto 0) xor
+                PP11MUL_SX (127 downto 0) ;
+S03MUL1_SX <=   S03MUL0_SX (127 downto 0) xor C03MUL0_SX (127 downto 0) xor
+                PP15MUL_SX (127 downto 0) ;
+S04MUL1_SX <=   S04MUL0_SX (127 downto 0) xor C04MUL0_SX (127 downto 0) xor
+                PP19MUL_SX (127 downto 0) ;
+S05MUL1_SX <=   S05MUL0_SX (127 downto 0) xor C05MUL0_SX (127 downto 0) xor
+                PP23MUL_SX (127 downto 0) ;
+S06MUL1_SX <=   S06MUL0_SX (127 downto 0) xor C06MUL0_SX (127 downto 0) xor
+                PP27MUL_SX (127 downto 0) ;
+S07MUL1_SX <=   S07MUL0_SX (127 downto 0) xor C07MUL0_SX (127 downto 0) xor
+                PP31MUL_SX (127 downto 0) ;
+S08MUL1_SX <=   S08MUL0_SX (127 downto 0) xor C08MUL0_SX (127 downto 0) xor
+                PP35MUL_SX (127 downto 0) ;
+S09MUL1_SX <=   S09MUL0_SX (127 downto 0) xor C09MUL0_SX (127 downto 0) xor
+                PP39MUL_SX (127 downto 0) ;
+S10MUL1_SX <=   S10MUL0_SX (127 downto 0) xor C10MUL0_SX (127 downto 0) xor
+                PP43MUL_SX (127 downto 0) ;
+S11MUL1_SX <=   S11MUL0_SX (127 downto 0) xor C11MUL0_SX (127 downto 0) xor
+                PP47MUL_SX (127 downto 0) ;
+S12MUL1_SX <=   S12MUL0_SX (127 downto 0) xor C12MUL0_SX (127 downto 0) xor
+                PP51MUL_SX (127 downto 0) ;
+S13MUL1_SX <=   S13MUL0_SX (127 downto 0) xor C13MUL0_SX (127 downto 0) xor
+                PP55MUL_SX (127 downto 0) ;
+S14MUL1_SX <=   S14MUL0_SX (127 downto 0) xor C14MUL0_SX (127 downto 0) xor
+                PP59MUL_SX (127 downto 0) ;
+S15MUL1_SX <=   S15MUL0_SX (127 downto 0) xor C15MUL0_SX (127 downto 0) xor
+                PP63MUL_SX (127 downto 0) ;
+
+C00MUL1_SX <= ((S00MUL0_SX (126 downto 0) and C00MUL0_SX (126 downto 0)) or
+               (S00MUL0_SX (126 downto 0) and PP03MUL_SX (126 downto 0)) or
+               (C00MUL0_SX (126 downto 0) and PP03MUL_SX (126 downto 0))) & '0';
+
+C01MUL1_SX <= ((S01MUL0_SX (126 downto 0) and C01MUL0_SX (126 downto 0)) or
+               (S01MUL0_SX (126 downto 0) and PP07MUL_SX (126 downto 0)) or
+               (C01MUL0_SX (126 downto 0) and PP07MUL_SX (126 downto 0))) & '0';
+
+C02MUL1_SX <= ((S02MUL0_SX (126 downto 0) and C02MUL0_SX (126 downto 0)) or
+               (S02MUL0_SX (126 downto 0) and PP11MUL_SX (126 downto 0)) or
+               (C02MUL0_SX (126 downto 0) and PP11MUL_SX (126 downto 0))) & '0';
+
+C03MUL1_SX <= ((S03MUL0_SX (126 downto 0) and C03MUL0_SX (126 downto 0)) or
+               (S03MUL0_SX (126 downto 0) and PP15MUL_SX (126 downto 0)) or
+               (C03MUL0_SX (126 downto 0) and PP15MUL_SX (126 downto 0))) & '0';
+
+C04MUL1_SX <= ((S04MUL0_SX (126 downto 0) and C04MUL0_SX (126 downto 0)) or
+               (S04MUL0_SX (126 downto 0) and PP19MUL_SX (126 downto 0)) or
+               (C04MUL0_SX (126 downto 0) and PP19MUL_SX (126 downto 0))) & '0';
+
+C05MUL1_SX <= ((S05MUL0_SX (126 downto 0) and C05MUL0_SX (126 downto 0)) or
+               (S05MUL0_SX (126 downto 0) and PP23MUL_SX (126 downto 0)) or
+               (C05MUL0_SX (126 downto 0) and PP23MUL_SX (126 downto 0))) & '0';
+
+C06MUL1_SX <= ((S06MUL0_SX (126 downto 0) and C06MUL0_SX (126 downto 0)) or
+               (S06MUL0_SX (126 downto 0) and PP27MUL_SX (126 downto 0)) or
+               (C06MUL0_SX (126 downto 0) and PP27MUL_SX (126 downto 0))) & '0';
+
+C07MUL1_SX <= ((S07MUL0_SX (126 downto 0) and C07MUL0_SX (126 downto 0)) or
+               (S07MUL0_SX (126 downto 0) and PP31MUL_SX (126 downto 0)) or
+               (C07MUL0_SX (126 downto 0) and PP31MUL_SX (126 downto 0))) & '0';
+
+C08MUL1_SX <= ((S07MUL0_SX (126 downto 0) and C08MUL0_SX (126 downto 0)) or
+               (S07MUL0_SX (126 downto 0) and PP35MUL_SX (126 downto 0)) or
+               (C07MUL0_SX (126 downto 0) and PP35MUL_SX (126 downto 0))) & '0';
+
+C09MUL1_SX <= ((S07MUL0_SX (126 downto 0) and C09MUL0_SX (126 downto 0)) or
+               (S07MUL0_SX (126 downto 0) and PP39MUL_SX (126 downto 0)) or
+               (C07MUL0_SX (126 downto 0) and PP39MUL_SX (126 downto 0))) & '0';
+
+C10MUL1_SX <= ((S10MUL0_SX (126 downto 0) and C10MUL0_SX (126 downto 0)) or
+               (S10MUL0_SX (126 downto 0) and PP43MUL_SX (126 downto 0)) or
+               (C10MUL0_SX (126 downto 0) and PP43MUL_SX (126 downto 0))) & '0';
+
+C11MUL1_SX <= ((S11MUL0_SX (126 downto 0) and C11MUL0_SX (126 downto 0)) or
+               (S11MUL0_SX (126 downto 0) and PP47MUL_SX (126 downto 0)) or
+               (C11MUL0_SX (126 downto 0) and PP47MUL_SX (126 downto 0))) & '0';
+
+C12MUL1_SX <= ((S12MUL0_SX (126 downto 0) and C12MUL0_SX (126 downto 0)) or
+               (S12MUL0_SX (126 downto 0) and PP51MUL_SX (126 downto 0)) or
+               (C12MUL0_SX (126 downto 0) and PP51MUL_SX (126 downto 0))) & '0';
+
+C13MUL1_SX <= ((S13MUL0_SX (126 downto 0) and C13MUL0_SX (126 downto 0)) or
+               (S13MUL0_SX (126 downto 0) and PP55MUL_SX (126 downto 0)) or
+               (C13MUL0_SX (126 downto 0) and PP55MUL_SX (126 downto 0))) & '0';
+
+C14MUL1_SX <= ((S14MUL0_SX (126 downto 0) and C14MUL0_SX (126 downto 0)) or
+               (S14MUL0_SX (126 downto 0) and PP59MUL_SX (126 downto 0)) or
+               (C14MUL0_SX (126 downto 0) and PP59MUL_SX (126 downto 0))) & '0';
+
+C15MUL1_SX <= ((S15MUL0_SX (126 downto 0) and C15MUL0_SX (126 downto 0)) or
+               (S15MUL0_SX (126 downto 0) and PP63MUL_SX (126 downto 0)) or
+               (C15MUL0_SX (126 downto 0) and PP63MUL_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - third   layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL2_SX <=   S00MUL1_SX (127 downto 0) xor C00MUL1_SX (127 downto 0) xor
+                S01MUL1_SX (127 downto 0) ;
+S01MUL2_SX <=   S02MUL1_SX (127 downto 0) xor C02MUL1_SX (127 downto 0) xor
+                S03MUL1_SX (127 downto 0) ;
+S02MUL2_SX <=   S04MUL1_SX (127 downto 0) xor C04MUL1_SX (127 downto 0) xor
+                S05MUL1_SX (127 downto 0) ;
+S03MUL2_SX <=   S06MUL1_SX (127 downto 0) xor C06MUL1_SX (127 downto 0) xor
+                S07MUL1_SX (127 downto 0) ;
+S04MUL2_SX <=   S08MUL1_SX (127 downto 0) xor C08MUL1_SX (127 downto 0) xor
+                S09MUL1_SX (127 downto 0) ;
+S05MUL2_SX <=   S10MUL1_SX (127 downto 0) xor C10MUL1_SX (127 downto 0) xor
+                S11MUL1_SX (127 downto 0) ;
+S06MUL2_SX <=   S12MUL1_SX (127 downto 0) xor C12MUL1_SX (127 downto 0) xor
+                S13MUL1_SX (127 downto 0) ;
+S07MUL2_SX <=   S14MUL1_SX (127 downto 0) xor C14MUL1_SX (127 downto 0) xor
+                S15MUL1_SX (127 downto 0) ;
+
+C00MUL2_SX <= ((S00MUL1_SX (126 downto 0) and C00MUL1_SX (126 downto 0)) or
+               (S00MUL1_SX (126 downto 0) and S01MUL1_SX (126 downto 0)) or
+               (C00MUL1_SX (126 downto 0) and S01MUL1_SX (126 downto 0))) & '0';
+
+C01MUL2_SX <= ((S02MUL1_SX (126 downto 0) and C02MUL1_SX (126 downto 0)) or
+               (S02MUL1_SX (126 downto 0) and S03MUL1_SX (126 downto 0)) or
+               (C02MUL1_SX (126 downto 0) and S03MUL1_SX (126 downto 0))) & '0';
+
+C02MUL2_SX <= ((S04MUL1_SX (126 downto 0) and C04MUL1_SX (126 downto 0)) or
+               (S04MUL1_SX (126 downto 0) and S05MUL1_SX (126 downto 0)) or
+               (C04MUL1_SX (126 downto 0) and S05MUL1_SX (126 downto 0))) & '0';
+
+C03MUL2_SX <= ((S06MUL1_SX (126 downto 0) and C06MUL1_SX (126 downto 0)) or
+               (S06MUL1_SX (126 downto 0) and S07MUL1_SX (126 downto 0)) or
+               (C06MUL1_SX (126 downto 0) and S07MUL1_SX (126 downto 0))) & '0';
+
+C04MUL2_SX <= ((S08MUL1_SX (126 downto 0) and C08MUL1_SX (126 downto 0)) or
+               (S08MUL1_SX (126 downto 0) and S09MUL1_SX (126 downto 0)) or
+               (C08MUL1_SX (126 downto 0) and S09MUL1_SX (126 downto 0))) & '0';
+
+C05MUL2_SX <= ((S10MUL1_SX (126 downto 0) and C10MUL1_SX (126 downto 0)) or
+               (S10MUL1_SX (126 downto 0) and S11MUL1_SX (126 downto 0)) or
+               (C10MUL1_SX (126 downto 0) and S11MUL1_SX (126 downto 0))) & '0';
+
+C06MUL2_SX <= ((S12MUL1_SX (126 downto 0) and C12MUL1_SX (126 downto 0)) or
+               (S12MUL1_SX (126 downto 0) and S13MUL1_SX (126 downto 0)) or
+               (C12MUL1_SX (126 downto 0) and S13MUL1_SX (126 downto 0))) & '0';
+
+C07MUL2_SX <= ((S14MUL1_SX (126 downto 0) and C14MUL1_SX (126 downto 0)) or
+               (S14MUL1_SX (126 downto 0) and S15MUL1_SX (126 downto 0)) or
+               (C14MUL1_SX (126 downto 0) and S15MUL1_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - fourth  layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL3_SX <=   S00MUL2_SX (127 downto 0) xor C00MUL2_SX (127 downto 0) xor
+                C01MUL1_SX (127 downto 0) ;
+S01MUL3_SX <=   S01MUL2_SX (127 downto 0) xor C01MUL2_SX (127 downto 0) xor
+                C03MUL1_SX (127 downto 0) ;
+S02MUL3_SX <=   S02MUL2_SX (127 downto 0) xor C02MUL2_SX (127 downto 0) xor
+                C05MUL1_SX (127 downto 0) ;
+S03MUL3_SX <=   S03MUL2_SX (127 downto 0) xor C03MUL2_SX (127 downto 0) xor
+                C07MUL1_SX (127 downto 0) ;
+S04MUL3_SX <=   S04MUL2_SX (127 downto 0) xor C04MUL2_SX (127 downto 0) xor
+                C09MUL1_SX (127 downto 0) ;
+S05MUL3_SX <=   S05MUL2_SX (127 downto 0) xor C05MUL2_SX (127 downto 0) xor
+                C11MUL1_SX (127 downto 0) ;
+S06MUL3_SX <=   S06MUL2_SX (127 downto 0) xor C06MUL2_SX (127 downto 0) xor
+                C13MUL1_SX (127 downto 0) ;
+S07MUL3_SX <=   S07MUL2_SX (127 downto 0) xor C07MUL2_SX (127 downto 0) xor
+                C15MUL1_SX (127 downto 0) ;
+
+C00MUL3_SX <= ((S00MUL2_SX (126 downto 0) and C00MUL2_SX (126 downto 0)) or
+               (S00MUL2_SX (126 downto 0) and C01MUL1_SX (126 downto 0)) or
+               (C00MUL2_SX (126 downto 0) and C01MUL1_SX (126 downto 0))) & '0';
+
+C01MUL3_SX <= ((S01MUL2_SX (126 downto 0) and C01MUL2_SX (126 downto 0)) or
+               (S01MUL2_SX (126 downto 0) and C03MUL1_SX (126 downto 0)) or
+               (C01MUL2_SX (126 downto 0) and C03MUL1_SX (126 downto 0))) & '0';
+
+C02MUL3_SX <= ((S02MUL2_SX (126 downto 0) and C02MUL2_SX (126 downto 0)) or
+               (S02MUL2_SX (126 downto 0) and C05MUL1_SX (126 downto 0)) or
+               (C02MUL2_SX (126 downto 0) and C05MUL1_SX (126 downto 0))) & '0';
+
+C03MUL3_SX <= ((S03MUL2_SX (126 downto 0) and C03MUL2_SX (126 downto 0)) or
+               (S03MUL2_SX (126 downto 0) and C07MUL1_SX (126 downto 0)) or
+               (C03MUL2_SX (126 downto 0) and C07MUL1_SX (126 downto 0))) & '0';
+
+C04MUL3_SX <= ((S04MUL2_SX (126 downto 0) and C04MUL2_SX (126 downto 0)) or
+               (S04MUL2_SX (126 downto 0) and C09MUL1_SX (126 downto 0)) or
+               (C04MUL2_SX (126 downto 0) and C09MUL1_SX (126 downto 0))) & '0';
+
+C05MUL3_SX <= ((S05MUL2_SX (126 downto 0) and C05MUL2_SX (126 downto 0)) or
+               (S05MUL2_SX (126 downto 0) and C11MUL1_SX (126 downto 0)) or
+               (C05MUL2_SX (126 downto 0) and C11MUL1_SX (126 downto 0))) & '0';
+
+C06MUL3_SX <= ((S06MUL2_SX (126 downto 0) and C06MUL2_SX (126 downto 0)) or
+               (S06MUL2_SX (126 downto 0) and C13MUL1_SX (126 downto 0)) or
+               (C06MUL2_SX (126 downto 0) and C13MUL1_SX (126 downto 0))) & '0';
+
+C07MUL3_SX <= ((S07MUL2_SX (126 downto 0) and C07MUL2_SX (126 downto 0)) or
+               (S07MUL2_SX (126 downto 0) and C15MUL1_SX (126 downto 0)) or
+               (C07MUL2_SX (126 downto 0) and C15MUL1_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - fifth   layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL4_SX <=   S00MUL3_SX (127 downto 0) xor C00MUL3_SX (127 downto 0) xor
+                PPXXMUL_SX (127 downto 0) ;
+S01MUL4_SX <=   S01MUL3_SX (127 downto 0) xor C01MUL3_SX (127 downto 0) xor
+                S02MUL3_SX (127 downto 0) ;
+S02MUL4_SX <=   S03MUL3_SX (127 downto 0) xor C03MUL3_SX (127 downto 0) xor
+                C02MUL3_SX (127 downto 0) ;
+S03MUL4_SX <=   S04MUL3_SX (127 downto 0) xor C04MUL3_SX (127 downto 0) xor
+                S05MUL3_SX (127 downto 0) ;
+S04MUL4_SX <=   S06MUL3_SX (127 downto 0) xor C06MUL3_SX (127 downto 0) xor
+                S07MUL3_SX (127 downto 0) ;
+
+C00MUL4_SX <= ((S00MUL3_SX (126 downto 0) and C00MUL3_SX (126 downto 0)) or
+               (S00MUL3_SX (126 downto 0) and PPXXMUL_SX (126 downto 0)) or
+               (C00MUL3_SX (126 downto 0) and PPXXMUL_SX (126 downto 0))) & '0';
+
+C01MUL4_SX <= ((S01MUL3_SX (126 downto 0) and C01MUL3_SX (126 downto 0)) or
+               (S01MUL3_SX (126 downto 0) and S02MUL3_SX (126 downto 0)) or
+               (C01MUL3_SX (126 downto 0) and S02MUL3_SX (126 downto 0))) & '0';
+
+C02MUL4_SX <= ((S03MUL3_SX (126 downto 0) and C03MUL3_SX (126 downto 0)) or
+               (S03MUL3_SX (126 downto 0) and C02MUL3_SX (126 downto 0)) or
+               (C03MUL3_SX (126 downto 0) and C02MUL3_SX (126 downto 0))) & '0';
+
+C03MUL4_SX <= ((S04MUL3_SX (126 downto 0) and C04MUL3_SX (126 downto 0)) or
+               (S04MUL3_SX (126 downto 0) and S05MUL3_SX (126 downto 0)) or
+               (C04MUL3_SX (126 downto 0) and S05MUL3_SX (126 downto 0))) & '0';
+
+C04MUL4_SX <= ((S06MUL3_SX (126 downto 0) and C06MUL3_SX (126 downto 0)) or
+               (S06MUL3_SX (126 downto 0) and S07MUL3_SX (126 downto 0)) or
+               (C06MUL3_SX (126 downto 0) and S07MUL3_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - sixth   layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL5_SX <=   S00MUL4_SX (127 downto 0) xor C00MUL4_SX (127 downto 0) xor
+                S01MUL4_SX (127 downto 0) ;
+S01MUL5_SX <=   S02MUL4_SX (127 downto 0) xor C02MUL4_SX (127 downto 0) xor
+                C01MUL4_SX (127 downto 0) ;
+S02MUL5_SX <=   S03MUL4_SX (127 downto 0) xor C03MUL4_SX (127 downto 0) xor
+                C05MUL3_SX (127 downto 0) ;
+S03MUL5_SX <=   S04MUL4_SX (127 downto 0) xor C04MUL4_SX (127 downto 0) xor
+                C07MUL3_SX (127 downto 0) ;
+
+C00MUL5_SX <= ((S00MUL4_SX (126 downto 0) and C00MUL4_SX (126 downto 0)) or
+               (S00MUL4_SX (126 downto 0) and S01MUL4_SX (126 downto 0)) or
+               (C00MUL4_SX (126 downto 0) and S01MUL4_SX (126 downto 0))) & '0';
+
+C01MUL5_SX <= ((S02MUL4_SX (126 downto 0) and C02MUL4_SX (126 downto 0)) or
+               (S02MUL4_SX (126 downto 0) and C01MUL4_SX (126 downto 0)) or
+               (C02MUL4_SX (126 downto 0) and C01MUL4_SX (126 downto 0))) & '0';
+
+C02MUL5_SX <= ((S03MUL4_SX (126 downto 0) and C03MUL4_SX (126 downto 0)) or
+               (S03MUL4_SX (126 downto 0) and C05MUL3_SX (126 downto 0)) or
+               (C03MUL4_SX (126 downto 0) and C05MUL3_SX (126 downto 0))) & '0';
+
+C03MUL5_SX <= ((S04MUL4_SX (126 downto 0) and C04MUL4_SX (126 downto 0)) or
+               (S04MUL4_SX (126 downto 0) and C07MUL3_SX (126 downto 0)) or
+               (C04MUL4_SX (126 downto 0) and C07MUL3_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - seventh layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL6_SX <=   S00MUL5_SX (127 downto 0) xor C00MUL5_SX (127 downto 0) xor
+                PPZZMUL_SX (127 downto 0) ;
+
+S01MUL6_SX <=   S01MUL5_SX (127 downto 0) xor C01MUL5_SX (127 downto 0) xor
+                S02MUL5_SX (127 downto 0) ;
+S02MUL6_SX <=   S03MUL5_SX (127 downto 0) xor C03MUL5_SX (127 downto 0) xor
+                C02MUL5_SX (127 downto 0) ;
+
+C00MUL6_SX <= ((S00MUL5_SX (126 downto 0) and C00MUL5_SX (126 downto 0)) or
+               (S00MUL5_SX (126 downto 0) and PPZZMUL_SX (126 downto 0)) or
+               (C00MUL5_SX (126 downto 0) and PPZZMUL_SX (126 downto 0))) & '0';
+
+C01MUL6_SX <= ((S01MUL5_SX (126 downto 0) and C01MUL5_SX (126 downto 0)) or
+               (S01MUL5_SX (126 downto 0) and S02MUL5_SX (126 downto 0)) or
+               (C01MUL5_SX (126 downto 0) and S02MUL5_SX (126 downto 0))) & '0';
+
+C02MUL6_SX <= ((S03MUL5_SX (126 downto 0) and C03MUL5_SX (126 downto 0)) or
+               (S03MUL5_SX (126 downto 0) and C02MUL5_SX (126 downto 0)) or
+               (C03MUL5_SX (126 downto 0) and C02MUL5_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - eighth  layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL7_SX <=   S00MUL6_SX (127 downto 0) xor C00MUL6_SX (127 downto 0) xor
+                S01MUL6_SX (127 downto 0) ;
+S01MUL7_SX <=   S02MUL6_SX (127 downto 0) xor C02MUL6_SX (127 downto 0) xor
+                C01MUL6_SX (127 downto 0) ;
+
+C00MUL7_SX <= ((S00MUL6_SX (126 downto 0) and C00MUL6_SX (126 downto 0)) or
+               (S00MUL6_SX (126 downto 0) and S01MUL6_SX (126 downto 0)) or
+               (C00MUL6_SX (126 downto 0) and S01MUL6_SX (126 downto 0))) & '0';
+
+C01MUL7_SX <= ((S02MUL6_SX (126 downto 0) and C02MUL6_SX (126 downto 0)) or
+               (S02MUL6_SX (126 downto 0) and C01MUL6_SX (126 downto 0)) or
+               (C02MUL6_SX (126 downto 0) and C01MUL6_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - ninth   layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL8_SX <=   S00MUL7_SX (127 downto 0) xor C00MUL7_SX (127 downto 0) xor
+                S01MUL7_SX (127 downto 0) ;
+
+C00MUL8_SX <= ((S00MUL7_SX (126 downto 0) and C00MUL7_SX (126 downto 0)) or
+               (S00MUL7_SX (126 downto 0) and S01MUL7_SX (126 downto 0)) or
+               (C00MUL7_SX (126 downto 0) and S01MUL7_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carry save adders - tenth   layer			#
+	-- ### ------------------------------------------------------ ###
+
+S00MUL9_SX <=   S00MUL8_SX (127 downto 0) xor C00MUL8_SX (127 downto 0) xor
+                C01MUL7_SX (127 downto 0) ;
+
+C00MUL9_SX <= ((S00MUL8_SX (126 downto 0) and C00MUL8_SX (126 downto 0)) or
+               (S00MUL8_SX (126 downto 0) and C01MUL7_SX (126 downto 0)) or
+               (C00MUL8_SX (126 downto 0) and C01MUL7_SX (126 downto 0))) & '0';
+
+	-- ### ------------------------------------------------------ ###
+	-- #   final adder						#
+	-- ### ------------------------------------------------------ ###
+
+PR0MUL_SX  <=  S00MUL9_SX or  C00MUL9_SX ;
+GN0MUL_SX  <=  S00MUL9_SX and C00MUL9_SX ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   propagate-ganarate					#
+	-- ### ------------------------------------------------------ ###
+
+PR1MUL_SX  <=  PR0MUL_SX and (PR0MUL_SX (126 downto 0) &  '1'               ) ;
+PR2MUL_SX  <=  PR1MUL_SX and (PR1MUL_SX (125 downto 0) & B"11"              ) ;
+PR3MUL_SX  <=  PR2MUL_SX and (PR2MUL_SX (123 downto 0) & B"1111"            ) ;
+PR4MUL_SX  <=  PR3MUL_SX and (PR3MUL_SX (119 downto 0) & X"ff"              ) ;
+PR5MUL_SX  <=  PR4MUL_SX and (PR4MUL_SX (111 downto 0) & X"ffff"            ) ;
+PR6MUL_SX  <=  PR5MUL_SX and (PR5MUL_SX ( 95 downto 0) & X"ffffffff"        ) ;
+PR7MUL_SX  <=  PR6MUL_SX and (PR6MUL_SX ( 63 downto 0) & X"ffffffffffffffff") ;
+
+GN1MUL_SX  <=  GN0MUL_SX or
+              (PR0MUL_SX and (GN0MUL_SX (126 downto 0) &  '0'               ));
+GN2MUL_SX  <=  GN1MUL_SX or
+              (PR1MUL_SX and (GN1MUL_SX (125 downto 0) & B"00"              ));
+GN3MUL_SX  <=  GN2MUL_SX or
+              (PR2MUL_SX and (GN2MUL_SX (123 downto 0) & B"0000"            ));
+GN4MUL_SX  <=  GN3MUL_SX or
+              (PR3MUL_SX and (GN3MUL_SX (119 downto 0) & X"00"              ));
+GN5MUL_SX  <=  GN4MUL_SX or
+              (PR4MUL_SX and (GN4MUL_SX (111 downto 0) & X"0000"            ));
+GN6MUL_SX  <=  GN5MUL_SX or
+              (PR5MUL_SX and (GN5MUL_SX ( 95 downto 0) & X"00000000"        ));
+GN7MUL_SX  <=  GN6MUL_SX or
+              (PR6MUL_SX and (GN6MUL_SX ( 63 downto 0) & X"0000000000000000"));
+
+	-- ### ------------------------------------------------------ ###
+	-- #   sum and carry						#
+	-- ### ------------------------------------------------------ ###
+
+CRYMUL_SX  <=  GN7MUL_SX ;
+CYIMUL_SX  <=  CRYMUL_SX (126 downto  0) & '0';
+SUMMUL_SX  <=  CYIMUL_SX xor S00MUL9_SX xor C00MUL9_SX;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   final inverter						#
+	-- ### ------------------------------------------------------ ###
+
+RMUL_SX    <=  SUMMUL_SX when (ZINV_SX = '0') else not SUMMUL_SX;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs							#
+	-- #     - product						#
+	-- ### ------------------------------------------------------ ###
+
+RESLT      <=  RMUL_SX ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs :						#
+	-- #     - busy							#
+	-- #     - done							#
+	-- ### ------------------------------------------------------ ###
+
+BUSY       <= '0';
+DONE       <= '1';
+
+end;

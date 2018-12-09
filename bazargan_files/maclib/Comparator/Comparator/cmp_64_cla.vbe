@@ -1,0 +1,162 @@
+
+-- ### -------------------------------------------------------------- ###
+-- # file	: cmp_64_cla.vbe					#
+-- # date	: Mar 28 2014						#
+-- # version	: v1.2							#
+-- #									#
+-- # origin	: this description has been developed at LIP6		#
+-- #		  University Paris 6 - Pierre et Marie Curie		#
+-- #		  4 Place Jussieu 75252 Paris Cedex 05 - France		#
+-- #									#
+-- # descr.	: data flow description of a :				#
+-- #		  64-bit Signed/Unsigned Comparator			#
+-- #									#
+-- # authors	: Pirouz Bazargan Sabet					#
+-- ### -------------------------------------------------------------- ###
+
+entity CMP_64_CLA is
+
+port
+  (
+  signal   OPA          : in    bit_vector ( 63 downto  0)    ;-- operand
+  signal   OPB          : in    bit_vector ( 63 downto  0)    ;-- operand
+
+  signal   SGND         : in    bit                           ;-- signed
+
+  signal   BUSY         : out   bit                           ;-- busy
+  signal   DONE         : out   bit                           ;-- done
+
+  signal   LT           : out   bit                           ;-- result
+  signal   EQ           : out   bit                           ;-- result
+  signal   GT           : out   bit                            -- result
+  );
+
+end CMP_64_CLA ;
+
+-- ### -------------------------------------------------------------- ###
+-- #   internal description - contains the following sections:		#
+-- #									#
+-- #      - internal signal declarations				#
+-- #      - signals' expression						#
+-- ### -------------------------------------------------------------- ###
+
+architecture BEHAVIOUR of CMP_64_CLA is
+
+signal   OPA_SX       : bit_vector ( 63 downto  0)         ;-- operand
+signal   OPA_N_SX     : bit_vector ( 63 downto  0)         ;-- operand
+signal   OPB_SX       : bit_vector ( 63 downto  0)         ;-- operand
+signal   OPB_N_SX     : bit_vector ( 63 downto  0)         ;-- operand
+
+signal   PR0_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR1_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR2_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR3_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR4_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR5_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR6_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+
+signal   GN0_L_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN1_L_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN2_L_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN3_L_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN4_L_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN5_L_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN6_L_SX     : bit_vector ( 63 downto  0)         ;-- generate
+
+signal   GN0_E_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN1_E_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN2_E_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN3_E_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN4_E_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN5_E_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN6_E_SX     : bit_vector ( 63 downto  0)         ;-- generate
+
+signal   GN0_G_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN1_G_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN2_G_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN3_G_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN4_G_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN5_G_SX     : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN6_G_SX     : bit_vector ( 63 downto  0)         ;-- generate
+
+begin
+
+	-- ### ------------------------------------------------------ ###
+	-- #   operands							#
+	-- ### ------------------------------------------------------ ###
+
+OPA_SX     <=     OPA ;
+OPA_N_SX   <= not OPA ;
+
+OPB_SX     <=     OPB ;
+OPB_N_SX   <= not OPB ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   propagate-generate					#
+	-- ### ------------------------------------------------------ ###
+
+PR0_SX     <=
+   OPA_N_SX (63 downto 0) xor OPB_SX   (63 downto 0)    ;
+
+GN0_L_SX   <=
+  (OPA_SX   (63         ) and OPB_N_SX (63         )) &
+  (OPA_N_SX (62 downto 0) and OPB_SX   (62 downto 0))   when (SGND = '1') else
+  (OPA_N_SX (63 downto 0) and OPB_SX   (63 downto 0))   ;
+
+GN0_G_SX   <=
+  (OPA_N_SX (63         ) and OPB_SX   (63         )) &
+  (OPA_SX   (62 downto 0) and OPB_N_SX (62 downto 0))   when (SGND = '1') else
+  (OPA_SX   (63 downto 0) and OPB_N_SX (63 downto 0))   ;
+
+GN0_E_SX   <= X"00000000_00000000" ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   propagate-generate					#
+	-- ### ------------------------------------------------------ ###
+
+PR1_SX     <= PR0_SX   and             (PR0_SX   (62 downto 0) &  '1'       ) ;
+PR2_SX     <= PR1_SX   and             (PR1_SX   (61 downto 0) & B"11"      ) ;
+PR3_SX     <= PR2_SX   and             (PR2_SX   (59 downto 0) & B"1111"    ) ;
+PR4_SX     <= PR3_SX   and             (PR3_SX   (55 downto 0) & X"ff"      ) ;
+PR5_SX     <= PR4_SX   and             (PR4_SX   (47 downto 0) & X"ffff"    ) ;
+PR6_SX     <= PR5_SX   and             (PR5_SX   (31 downto 0) & X"ffffffff") ;
+
+GN1_L_SX   <= GN0_L_SX or  (PR0_SX and (GN0_L_SX (62 downto 0) &  '0'       ));
+GN2_L_SX   <= GN1_L_SX or  (PR1_SX and (GN1_L_SX (61 downto 0) & B"00"      ));
+GN3_L_SX   <= GN2_L_SX or  (PR2_SX and (GN2_L_SX (59 downto 0) & B"0000"    ));
+GN4_L_SX   <= GN3_L_SX or  (PR3_SX and (GN3_L_SX (55 downto 0) & X"00"      ));
+GN5_L_SX   <= GN4_L_SX or  (PR4_SX and (GN4_L_SX (47 downto 0) & X"0000"    ));
+GN6_L_SX   <= GN5_L_SX or  (PR5_SX and (GN5_L_SX (31 downto 0) & X"00000000"));
+
+GN1_E_SX   <= GN0_E_SX or  (PR0_SX and (GN0_E_SX (62 downto 0) &  '0'       ));
+GN2_E_SX   <= GN1_E_SX or  (PR1_SX and (GN1_E_SX (61 downto 0) & B"00"      ));
+GN3_E_SX   <= GN2_E_SX or  (PR2_SX and (GN2_E_SX (59 downto 0) & B"0000"    ));
+GN4_E_SX   <= GN3_E_SX or  (PR3_SX and (GN3_E_SX (55 downto 0) & X"00"      ));
+GN5_E_SX   <= GN4_E_SX or  (PR4_SX and (GN4_E_SX (47 downto 0) & X"0000"    ));
+GN6_E_SX   <= GN5_E_SX or  (PR5_SX and (GN5_E_SX (31 downto 0) & X"00000000"));
+
+GN1_G_SX   <= GN0_G_SX or  (PR0_SX and (GN0_G_SX (62 downto 0) &  '0'       ));
+GN2_G_SX   <= GN1_G_SX or  (PR1_SX and (GN1_G_SX (61 downto 0) & B"00"      ));
+GN3_G_SX   <= GN2_G_SX or  (PR2_SX and (GN2_G_SX (59 downto 0) & B"0000"    ));
+GN4_G_SX   <= GN3_G_SX or  (PR3_SX and (GN3_G_SX (55 downto 0) & X"00"      ));
+GN5_G_SX   <= GN4_G_SX or  (PR4_SX and (GN4_G_SX (47 downto 0) & X"0000"    ));
+GN6_G_SX   <= GN5_G_SX or  (PR5_SX and (GN5_G_SX (31 downto 0) & X"00000000"));
+
+	-- ### ------------------------------------------------------ ###
+	-- #   comparison						#
+	-- ### ------------------------------------------------------ ###
+
+LT         <= GN6_L_SX (63) ;
+EQ         <= PR6_SX   (63) ;
+GT         <= GN6_G_SX (63) ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs :						#
+	-- #     - busy							#
+	-- #     - done							#
+	-- ### ------------------------------------------------------ ###
+
+BUSY       <= '0';
+DONE       <= '1';
+
+end;

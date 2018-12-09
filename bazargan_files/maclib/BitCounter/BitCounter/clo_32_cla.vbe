@@ -1,0 +1,149 @@
+
+-- ### -------------------------------------------------------------- ###
+-- # file	: clz_64_cla.vbe					#
+-- # date	: May 19 2014						#
+-- # version	: v1.2							#
+-- #									#
+-- # origin	: this description has been developed at LIP6		#
+-- #		  University Paris 6 - Pierre et Marie Curie		#
+-- #		  4 Place Jussieu 75252 Paris Cedex 05 - France		#
+-- #									#
+-- # descr.	: data flow description of a :				#
+-- #		  64-bit Leading Zero Counter				#
+-- #		  (Kogge-Stone scheme)					#
+-- #									#
+-- # authors	: Pirouz Bazargan Sabet					#
+-- ### -------------------------------------------------------------- ###
+
+entity CLO_32_CLA is
+
+port
+  (
+  signal   OPR          : in    bit_vector ( 31 downto  0)    ;-- operand
+  signal   CLD          : out   bit_vector (  5 downto  0)     -- result
+  );
+
+end CLO_32_CLA ;
+
+-- ### -------------------------------------------------------------- ###
+-- #   internal description - contains the following sections:		#
+-- #									#
+-- #      - internal signal declarations				#
+-- #      - signals' expression						#
+-- ### -------------------------------------------------------------- ###
+
+architecture BEHAVIOUR of CLO_32_CLA is
+
+signal   OPR_SX       : bit_vector ( 31 downto  0)         ;-- operand
+
+signal   PR0_SX       : bit_vector ( 31 downto  0)         ;-- propagate
+signal   PR1_SX       : bit_vector ( 31 downto  0)         ;-- propagate
+signal   PR2_SX       : bit_vector ( 31 downto  0)         ;-- propagate
+signal   PR3_SX       : bit_vector ( 31 downto  0)         ;-- propagate
+signal   PR4_SX       : bit_vector ( 31 downto  0)         ;-- propagate
+signal   PR5_SX       : bit_vector ( 31 downto  0)         ;-- propagate
+
+signal   CLD1_00_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_02_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_04_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_06_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_08_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_10_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_12_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_14_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_16_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_18_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_20_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_22_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_24_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_26_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_28_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD1_30_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD2_00_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD2_04_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD2_08_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD2_12_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD2_16_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD2_20_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD2_24_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD2_28_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD3_00_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD3_08_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD3_16_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD3_24_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD4_00_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD4_16_SX   : bit_vector (  5 downto  0)         ;-- result
+signal   CLD5_00_SX   : bit_vector (  5 downto  0)         ;-- result
+
+begin
+
+	-- ### ------------------------------------------------------ ###
+	-- #   operand							#
+	-- ### ------------------------------------------------------ ###
+
+OPR_SX     <= OPR ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   propagate						#
+	-- ### ------------------------------------------------------ ###
+
+PR0_SX     <= OPR_SX ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   propagate						#
+	-- ### ------------------------------------------------------ ###
+
+PR1_SX     <= PR0_SX and ( '1'    & PR0_SX ( 31 downto  1)) ;
+PR2_SX     <= PR1_SX and (B"11"   & PR1_SX ( 31 downto  2)) ;
+PR3_SX     <= PR2_SX and (B"1111" & PR2_SX ( 31 downto  4)) ;
+PR4_SX     <= PR3_SX and (X"ff"   & PR3_SX ( 31 downto  8)) ;
+PR5_SX     <= PR4_SX and (X"ffff" & PR4_SX ( 31 downto 16)) ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   encode							#
+	-- ### ------------------------------------------------------ ###
+
+CLD1_00_SX <= B"01_1111" when (PR0_SX ( 1) = '1') else B"01_1110" ;
+CLD1_02_SX <= B"01_1101" when (PR0_SX ( 3) = '1') else B"01_1100" ;
+CLD1_04_SX <= B"01_1011" when (PR0_SX ( 5) = '1') else B"01_1010" ;
+CLD1_06_SX <= B"01_1001" when (PR0_SX ( 7) = '1') else B"01_1000" ;
+CLD1_08_SX <= B"01_0111" when (PR0_SX ( 9) = '1') else B"01_0110" ;
+CLD1_10_SX <= B"01_0101" when (PR0_SX (11) = '1') else B"01_0100" ;
+CLD1_12_SX <= B"01_0011" when (PR0_SX (13) = '1') else B"01_0010" ;
+CLD1_14_SX <= B"01_0001" when (PR0_SX (15) = '1') else B"01_0000" ;
+CLD1_16_SX <= B"00_1111" when (PR0_SX (17) = '1') else B"00_1110" ;
+CLD1_18_SX <= B"00_1101" when (PR0_SX (19) = '1') else B"00_1100" ;
+CLD1_20_SX <= B"00_1011" when (PR0_SX (21) = '1') else B"00_1010" ;
+CLD1_22_SX <= B"00_1001" when (PR0_SX (23) = '1') else B"00_1000" ;
+CLD1_24_SX <= B"00_0111" when (PR0_SX (25) = '1') else B"00_0110" ;
+CLD1_26_SX <= B"00_0101" when (PR0_SX (27) = '1') else B"00_0100" ;
+CLD1_28_SX <= B"00_0011" when (PR0_SX (29) = '1') else B"00_0010" ;
+CLD1_30_SX <= B"00_0001" when (PR0_SX (31) = '1') else B"00_0000" ;
+
+CLD2_00_SX <= CLD1_00_SX when (PR1_SX ( 2) = '1') else CLD1_02_SX ;
+CLD2_04_SX <= CLD1_04_SX when (PR1_SX ( 6) = '1') else CLD1_06_SX ;
+CLD2_08_SX <= CLD1_08_SX when (PR1_SX (10) = '1') else CLD1_10_SX ;
+CLD2_12_SX <= CLD1_12_SX when (PR1_SX (14) = '1') else CLD1_14_SX ;
+CLD2_16_SX <= CLD1_16_SX when (PR1_SX (18) = '1') else CLD1_18_SX ;
+CLD2_20_SX <= CLD1_20_SX when (PR1_SX (22) = '1') else CLD1_22_SX ;
+CLD2_24_SX <= CLD1_24_SX when (PR1_SX (26) = '1') else CLD1_26_SX ;
+CLD2_28_SX <= CLD1_28_SX when (PR1_SX (30) = '1') else CLD1_30_SX ;
+
+CLD3_00_SX <= CLD2_00_SX when (PR2_SX ( 4) = '1') else CLD2_04_SX ;
+CLD3_08_SX <= CLD2_08_SX when (PR2_SX (12) = '1') else CLD2_12_SX ;
+CLD3_16_SX <= CLD2_16_SX when (PR2_SX (20) = '1') else CLD2_20_SX ;
+CLD3_24_SX <= CLD2_24_SX when (PR2_SX (28) = '1') else CLD2_28_SX ;
+
+CLD4_00_SX <= CLD3_00_SX when (PR3_SX (08) = '1') else CLD3_08_SX ;
+CLD4_16_SX <= CLD3_16_SX when (PR3_SX (24) = '1') else CLD3_24_SX ;
+
+CLD5_00_SX <= B"10_0000" when (PR5_SX ( 0) = '1') else
+              CLD4_00_SX when (PR4_SX (16) = '1') else CLD4_16_SX ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs							#
+	-- ### ------------------------------------------------------ ###
+
+CLD        <= CLD5_00_SX ;
+
+end;

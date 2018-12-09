@@ -1,0 +1,10 @@
+ENTITY expected_nand IS
+	PORT (  i0 : IN  bit,
+			i1 : IN  bit,
+			nq : OUT bit);
+END ENTITY;
+
+ARCHITECTURE behav OF expected_nand IS
+BEGIN
+	nq <= NOT (i0 AND i1);
+END ARCHITECTURE;

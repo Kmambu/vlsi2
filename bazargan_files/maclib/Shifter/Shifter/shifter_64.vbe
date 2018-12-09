@@ -1,0 +1,208 @@
+
+-- ### -------------------------------------------------------------- ###
+-- # file	: shifter_64.vbe					#
+-- # date	: Mar 25 2014						#
+-- # version	: v1.2							#
+-- #									#
+-- # origin	: this description has been developed at LIP6		#
+-- #		  University Paris 6 - Pierre et Marie Curie		#
+-- #		  4 Place Jussieu 75252 Paris Cedex 05 - France		#
+-- #									#
+-- # description: data flow description of a :				#
+-- #		  64-bit Logic/Arithmetic Left/Right Shift/Rotate	#
+-- #									#
+-- # authors	: Pirouz Bazargan Sabet					#
+-- ### -------------------------------------------------------------- ###
+
+entity SHIFTER_64 is
+
+port
+  (
+  signal   OPR          : in    bit_vector ( 63 downto  0)    ;-- operand
+  signal   SHAM         : in    bit_vector (  5 downto  0)    ;-- shift amount
+
+  signal   OPRTYP       : in    bit_vector (  2 downto  0)    ;-- oper type
+
+  signal   BUSY         : out   bit                           ;-- busy
+  signal   DONE         : out   bit                           ;-- done
+
+  signal   SHF          : out   bit_vector ( 63 downto  0)     -- result
+  );
+
+end SHIFTER_64 ;
+
+-- ### -------------------------------------------------------------- ###
+-- #   internal description - contains the following sections:		#
+-- #									#
+-- #      - internal signal declarations				#
+-- #      - signals' expression						#
+-- ### -------------------------------------------------------------- ###
+
+architecture BEHAVIOUR of SHIFTER_64 is
+
+signal   OPR_SX       : bit_vector ( 63 downto  0)         ;-- operand
+
+signal   RIGHT_SX     : bit                                ;
+signal   ROTATE_SX    : bit                                ;
+signal   SHR_SX       : bit                                ;
+signal   SHL_SX       : bit                                ;
+
+signal   EFFSHAM_SX   : bit_vector (  6 downto  0)         ;
+
+signal   OPRSGN_SX    : bit_vector ( 63 downto  0)         ;
+signal   SGN_SX       : bit_vector ( 63 downto  0)         ;
+
+signal   SHF0_T_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF1_T_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF2_T_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF3_T_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF4_T_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF5_T_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF6_T_SX    : bit_vector ( 63 downto  0)         ;
+
+signal   SHF0_F_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF1_F_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF2_F_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF3_F_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF4_F_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF5_F_SX    : bit_vector ( 63 downto  0)         ;
+signal   SHF6_F_SX    : bit_vector ( 63 downto  0)         ;
+
+signal   SHF0_SX      : bit_vector ( 63 downto  0)         ;
+signal   SHF1_SX      : bit_vector ( 63 downto  0)         ;
+signal   SHF2_SX      : bit_vector ( 63 downto  0)         ;
+signal   SHF3_SX      : bit_vector ( 63 downto  0)         ;
+signal   SHF4_SX      : bit_vector ( 63 downto  0)         ;
+signal   SHF5_SX      : bit_vector ( 63 downto  0)         ;
+signal   SHF6_SX      : bit_vector ( 63 downto  0)         ;
+
+constant shf_ll       : bit_vector (  2 downto  0) := B"000";
+constant rot_l        : bit_vector (  2 downto  0) := B"100";
+constant shf_rl       : bit_vector (  2 downto  0) := B"010";
+constant shf_ra       : bit_vector (  2 downto  0) := B"011";
+constant rot_r        : bit_vector (  2 downto  0) := B"110";
+
+begin
+
+	-- ### ------------------------------------------------------ ###
+	-- #   operands							#
+	-- ### ------------------------------------------------------ ###
+
+OPR_SX     <= OPR ;
+
+	-- ### ------------------------------------------------------ ###
+	-- ### ------------------------------------------------------ ###
+
+ROTATE_SX  <= OPRTYP (2);
+RIGHT_SX   <= OPRTYP (1);
+
+SHR_SX     <= not ROTATE_SX and     RIGHT_SX;
+SHL_SX     <= not ROTATE_SX and not RIGHT_SX;
+
+	-- ### ------------------------------------------------------ ###
+	-- ### ------------------------------------------------------ ###
+
+EFFSHAM_SX <= '0' &     SHAM when (RIGHT_SX = '0') else
+              '1' & not SHAM ;
+
+	-- ### ------------------------------------------------------ ###
+	-- ### ------------------------------------------------------ ###
+
+OPRSGN_SX  <= X"00000000_00000000" when (OPR_SX (63) = '0'   ) else
+              X"ffffffff_ffffffff" ;
+
+SGN_SX     <= X"00000000_00000000" when (OPRTYP      = shf_rl) else
+              OPRSGN_SX            ;
+
+	-- ### ------------------------------------------------------ ###
+	-- ### ------------------------------------------------------ ###
+
+SHF0_T_SX  <=
+  OPR_SX  (62 downto 0) &  '0'                   when (SHL_SX = '1') else
+  OPR_SX  (62 downto 0) & OPR_SX  (63          ) ;
+
+SHF1_T_SX  <=
+  SHF0_SX (61 downto 0) & B"00"                  when (SHL_SX = '1') else
+  SHF0_SX (61 downto 0) & SHF0_SX (63 downto 62) ;
+
+SHF2_T_SX  <=
+  SHF1_SX (59 downto 0) & B"0000"                when (SHL_SX = '1') else
+  SHF1_SX (59 downto 0) & SHF1_SX (63 downto 60) ;
+
+SHF3_T_SX  <=
+  SHF2_SX (55 downto 0) & X"00"                  when (SHL_SX = '1') else
+  SHF2_SX (55 downto 0) & SHF2_SX (63 downto 56) ;
+
+SHF4_T_SX  <=
+  SHF3_SX (47 downto 0) & X"0000"                when (SHL_SX = '1') else
+  SHF3_SX (47 downto 0) & SHF3_SX (63 downto 48) ;
+
+SHF5_T_SX  <=
+  SHF4_SX (31 downto 0) & X"00000000"            when (SHL_SX = '1') else
+  SHF4_SX (31 downto 0) & SHF4_SX (63 downto 32) ;
+
+SHF6_T_SX  <=
+  SHF5_SX (62 downto 0) & SHF5_SX (63          ) ;
+
+	-- ### ------------------------------------------------------ ###
+	-- ### ------------------------------------------------------ ###
+
+SHF0_F_SX  <=
+  OPR_SX  (63 downto  1) & SGN_SX (           0)    when (SHR_SX = '1') else
+  OPR_SX  (63 downto  0)                            ;
+
+SHF1_F_SX  <=
+  SHF0_SX (63 downto  3) & SGN_SX ( 2 downto  1)  &
+  SHF0_SX (           0)                            when (SHR_SX = '1') else
+  SHF0_SX (63 downto  0)                            ;
+
+SHF2_F_SX  <=
+  SHF1_SX (63 downto  7) & SGN_SX ( 6 downto  3)  &
+  SHF1_SX ( 2 downto  0)                            when (SHR_SX = '1') else
+  SHF1_SX (63 downto  0)                            ;
+
+SHF3_F_SX  <=
+  SHF2_SX (63 downto 15) & SGN_SX (14 downto  7)  &
+  SHF2_SX ( 6 downto  0)                            when (SHR_SX = '1') else
+  SHF2_SX (63 downto  0)                            ;
+
+SHF4_F_SX  <=
+  SHF3_SX (63 downto 31) & SGN_SX (30 downto 15)  &
+  SHF3_SX (14 downto  0)                            when (SHR_SX = '1') else
+  SHF3_SX (63 downto  0)                            ;
+
+SHF5_F_SX  <=
+  SHF4_SX (63          ) & SGN_SX (62 downto 31)  &
+  SHF4_SX (30 downto  0)                            when (SHR_SX = '1') else
+  SHF4_SX (63 downto  0)                            ;
+
+SHF6_F_SX  <=
+  SHF5_SX (63 downto  0)                            ;
+
+	-- ### ------------------------------------------------------ ###
+	-- ### ------------------------------------------------------ ###
+
+SHF0_SX    <= SHF0_T_SX when (EFFSHAM_SX (0) = '1') else SHF0_F_SX ;
+SHF1_SX    <= SHF1_T_SX when (EFFSHAM_SX (1) = '1') else SHF1_F_SX ;
+SHF2_SX    <= SHF2_T_SX when (EFFSHAM_SX (2) = '1') else SHF2_F_SX ;
+SHF3_SX    <= SHF3_T_SX when (EFFSHAM_SX (3) = '1') else SHF3_F_SX ;
+SHF4_SX    <= SHF4_T_SX when (EFFSHAM_SX (4) = '1') else SHF4_F_SX ;
+SHF5_SX    <= SHF5_T_SX when (EFFSHAM_SX (5) = '1') else SHF5_F_SX ;
+SHF6_SX    <= SHF6_T_SX when (EFFSHAM_SX (6) = '1') else SHF6_F_SX ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs							#
+	-- ### ------------------------------------------------------ ###
+
+SHF        <= SHF6_SX   ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs :						#
+	-- #     - busy							#
+	-- #     - done							#
+	-- ### ------------------------------------------------------ ###
+
+BUSY       <= '0';
+DONE       <= '1';
+
+end;

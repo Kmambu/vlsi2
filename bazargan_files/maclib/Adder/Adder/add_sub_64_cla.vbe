@@ -1,0 +1,124 @@
+
+-- ### -------------------------------------------------------------- ###
+-- # file	: add_sub_64_cla.vbe					#
+-- # date	: Sep 15 2010						#
+-- # version	: v1.2							#
+-- #									#
+-- # origin	: this description has been developed at LIP6		#
+-- #		  University Paris 6 - Pierre et Marie Curie		#
+-- #		  4 Place Jussieu 75252 Paris Cedex 05 - France		#
+-- #									#
+-- # descr.	: data flow description of a :				#
+-- #		  64-bit Carry Lookahead Adder-Subtractor		#
+-- #		  (Kogge-Stone scheme)					#
+-- #									#
+-- # authors	: Pirouz Bazargan Sabet					#
+-- ### -------------------------------------------------------------- ###
+
+entity ADD_SUB_64_CLA is
+
+port
+  (
+  signal   OPA          : in    bit_vector ( 63 downto  0)    ;-- operand
+  signal   OPB          : in    bit_vector ( 63 downto  0)    ;-- operand
+
+  signal   SUB          : in    bit                           ;-- subtract
+
+  signal   BUSY         : out   bit                           ;-- busy
+  signal   DONE         : out   bit                           ;-- done
+
+  signal   SUM          : out   bit_vector ( 63 downto  0)     -- result
+  );
+
+end ADD_SUB_64_CLA ;
+
+-- ### -------------------------------------------------------------- ###
+-- #   internal description - contains the following sections:		#
+-- #									#
+-- #      - internal signal declarations				#
+-- #      - signals' expression						#
+-- ### -------------------------------------------------------------- ###
+
+architecture BEHAVIOUR of ADD_SUB_64_CLA is
+
+signal   OPA_SX       : bit_vector ( 63 downto  0)         ;-- operand
+signal   OPB_SX       : bit_vector ( 63 downto  0)         ;-- operand
+
+signal   PR0_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR1_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR2_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR3_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR4_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR5_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+signal   PR6_SX       : bit_vector ( 63 downto  0)         ;-- propagate
+
+signal   GN0_SX       : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN1_SX       : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN2_SX       : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN3_SX       : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN4_SX       : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN5_SX       : bit_vector ( 63 downto  0)         ;-- generate
+signal   GN6_SX       : bit_vector ( 63 downto  0)         ;-- generate
+
+signal   CYI_SX       : bit_vector ( 63 downto  0)         ;-- carry
+signal   CRY_SX       : bit_vector ( 63 downto  0)         ;-- carry
+
+begin
+
+	-- ### ------------------------------------------------------ ###
+	-- #   operands							#
+	-- ### ------------------------------------------------------ ###
+
+OPA_SX     <= OPA                               ;
+OPB_SX     <= OPB when (SUB = '0') else not OPB ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   propagate-generate					#
+	-- ### ------------------------------------------------------ ###
+
+PR0_SX     <= OPA_SX or  OPB_SX ;
+GN0_SX     <= OPA_SX and OPB_SX ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   propagate-generate					#
+	-- ### ------------------------------------------------------ ###
+
+PR1_SX     <= PR0_SX and             (PR0_SX (62 downto 0) &  '1'       ) ;
+PR2_SX     <= PR1_SX and             (PR1_SX (61 downto 0) & B"11"      ) ;
+PR3_SX     <= PR2_SX and             (PR2_SX (59 downto 0) & B"1111"    ) ;
+PR4_SX     <= PR3_SX and             (PR3_SX (55 downto 0) & X"ff"      ) ;
+PR5_SX     <= PR4_SX and             (PR4_SX (47 downto 0) & X"ffff"    ) ;
+PR6_SX     <= PR5_SX and             (PR5_SX (31 downto 0) & X"ffffffff") ;
+
+GN1_SX     <= GN0_SX or  (PR0_SX and (GN0_SX (62 downto 0) &  '0'       ));
+GN2_SX     <= GN1_SX or  (PR1_SX and (GN1_SX (61 downto 0) & B"00"      ));
+GN3_SX     <= GN2_SX or  (PR2_SX and (GN2_SX (59 downto 0) & B"0000"    ));
+GN4_SX     <= GN3_SX or  (PR3_SX and (GN3_SX (55 downto 0) & X"00"      ));
+GN5_SX     <= GN4_SX or  (PR4_SX and (GN4_SX (47 downto 0) & X"0000"    ));
+GN6_SX     <= GN5_SX or  (PR5_SX and (GN5_SX (31 downto 0) & X"00000000"));
+
+	-- ### ------------------------------------------------------ ###
+	-- #   carries							#
+	-- ### ------------------------------------------------------ ###
+
+CRY_SX     <= (GN6_SX or PR6_SX) when (SUB = '1') else GN6_SX ;
+
+CYI_SX     <=  CRY_SX (62 downto 0) & SUB;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs :						#
+	-- #     - sum							#
+	-- ### ------------------------------------------------------ ###
+
+SUM        <=  OPA_SX xor OPB_SX xor CYI_SX ;
+
+	-- ### ------------------------------------------------------ ###
+	-- #   outputs :						#
+	-- #     - busy							#
+	-- #     - done							#
+	-- ### ------------------------------------------------------ ###
+
+BUSY       <= '0';
+DONE       <= '1';
+
+end;

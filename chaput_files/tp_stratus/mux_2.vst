@@ -1,0 +1,55 @@
+
+-- =======================================================================
+-- Coriolis Structural VHDL Driver
+-- Generated on Dec 09, 2018, 12:53
+-- 
+-- To be interoperable with Alliance, it uses it's special VHDL subset.
+-- ("man vhdl" under Alliance for more informations)
+-- =======================================================================
+
+entity mux_2 is
+  port ( cmd : in bit
+       ; i0  : in bit_vector(1 downto 0)
+       ; i1  : in bit_vector(1 downto 0)
+       ; s   : out bit_vector(1 downto 0)
+       ; vdd : in bit
+       ; vss : in bit
+       );
+end mux_2;
+
+architecture structural of mux_2 is
+
+  component mx2_x2
+    port ( cmd : in bit
+         ; i0  : in bit
+         ; i1  : in bit
+         ; q   : out bit
+         ; vdd : in bit
+         ; vss : in bit
+         );
+  end component;
+
+
+
+begin
+
+  mx2_x2_i1 : mx2_x2
+  port map ( cmd => cmd
+           , i0  => i0(1)
+           , i1  => i1(1)
+           , q   => s(1)
+           , vdd => vdd
+           , vss => vss
+           );
+
+  mx2_x2_i0 : mx2_x2
+  port map ( cmd => cmd
+           , i0  => i0(0)
+           , i1  => i1(0)
+           , q   => s(0)
+           , vdd => vdd
+           , vss => vss
+           );
+
+end structural;
+

@@ -1,0 +1,30 @@
+# Remove everything except...
+*
+!*/
+!.gitignore
+
+# READMEs
+!*README*
+
+# TCL, sh & CSH scripts
+!*.csh
+!*.tcl
+!*.sh
+
+# Python sources
+!*.py
+
+# Plaintexts
+!*.txt
+
+# PDF Documents
+!*.pdf
+
+# VHDL files and patterns
+!*.vhd
+!*.vbe
+!*.vst
+!*.pat
+
+# graal files
+!*.ap

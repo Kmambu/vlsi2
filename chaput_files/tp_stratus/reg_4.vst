@@ -1,22 +1,22 @@
 
 -- =======================================================================
 -- Coriolis Structural VHDL Driver
--- Generated on Dec 10, 2018, 09:15
+-- Generated on Dec 10, 2018, 10:21
 -- 
 -- To be interoperable with Alliance, it uses it's special VHDL subset.
 -- ("man vhdl" under Alliance for more informations)
 -- =======================================================================
 
-entity reg_2 is
+entity reg_4 is
   port ( ck  : in bit
-       ; d   : in bit_vector(1 downto 0)
-       ; q   : out bit_vector(1 downto 0)
+       ; d   : in bit_vector(3 downto 0)
+       ; q   : out bit_vector(3 downto 0)
        ; vdd : in bit
        ; vss : in bit
        );
-end reg_2;
+end reg_4;
 
-architecture structural of reg_2 is
+architecture structural of reg_4 is
 
   component sff1_x4
     port ( ck  : in bit
@@ -30,6 +30,22 @@ architecture structural of reg_2 is
 
 
 begin
+
+  sff1_x4_i3 : sff1_x4
+  port map ( ck  => ck
+           , i   => d(3)
+           , q   => q(3)
+           , vdd => vdd
+           , vss => vss
+           );
+
+  sff1_x4_i2 : sff1_x4
+  port map ( ck  => ck
+           , i   => d(2)
+           , q   => q(2)
+           , vdd => vdd
+           , vss => vss
+           );
 
   sff1_x4_i1 : sff1_x4
   port map ( ck  => ck

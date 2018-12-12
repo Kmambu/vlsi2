@@ -1,0 +1,89 @@
+
+-- =======================================================================
+-- Wololo!
+-- Coriolis Structural VHDL Driver
+-- Generated on Dec 09, 2018, 12:53
+-- 
+-- To be interoperable with Alliance, it uses it's special VHDL subset.
+-- ("man vhdl" under Alliance for more informations)
+-- =======================================================================
+
+entity full_adder is
+  port ( a   : in bit
+       ; b   : in bit
+       ; c   : in bit
+       ; s   : out bit
+       ; r   : out bit
+       ; vdd : in bit
+       ; vss : in bit
+       );
+end full_adder;
+
+architecture structural of full_adder is
+
+  component na2_x1
+    port ( i0  : in bit
+         ; i1  : in bit
+         ; nq  : out bit
+         ; vss : in bit
+         ; vdd : in bit
+         );
+  end component;
+
+  component xr2_x1
+    port ( i0  : in bit
+         ; i1  : in bit
+         ; q   : out bit
+         ; vss : in bit
+         ; vdd : in bit
+         );
+  end component;
+
+  signal ng   : bit;
+  signal p    : bit;
+  signal np_c : bit;
+
+begin
+
+  na2_x1_ng : na2_x1
+  port map ( i0  => a
+           , i1  => b
+           , nq  => ng
+           , vdd => vdd
+           , vss => vss
+           );
+
+  na2_x1_np_c : na2_x1
+  port map ( i0  => p
+           , i1  => c
+           , nq  => np_c
+           , vdd => vdd
+           , vss => vss
+           );
+
+  na2_x1_r : na2_x1
+  port map ( i0  => np_c
+           , i1  => ng
+           , nq  => r
+           , vdd => vdd
+           , vss => vss
+           );
+
+  xr2_x1_p  : xr2_x1
+  port map ( i0  => a
+           , i1  => b
+           , q   => p
+           , vdd => vdd
+           , vss => vss
+           );
+
+  xr2_x1_s  : xr2_x1
+  port map ( i0  => p
+           , i1  => c
+           , q   => s
+           , vdd => vdd
+           , vss => vss
+           );
+
+end structural;
+

@@ -28,3 +28,10 @@
 
 # graal files
 !*.ap
+
+# Documents and medias
+!*.pdf
+!*.tex
+!*.png
+!*.jpg
+!*.jpeg

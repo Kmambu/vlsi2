@@ -1,0 +1,18 @@
+* la phase elaborate est l'étape de la synthèse où la description RTL du circuit est transformée en un ensemble de composants numériques (portes logiques, multiplexeurs, registres) schématisable.
+
+* lors du Design Check, on peut détecter plusieurs erreurs :
+Warning : Unreachable statements for case item. [CDFG-472]
+        : Case item 'others' in module 'MIPS_32_1P_MUL_DIV' in file '/users/enseig/tuna/ue_vlsi2/rtl/mips_32_1p_mul_div.vhd' on line 2180.
+Warning : Unreachable statements for case item. [CDFG-472]
+		: Case item 'others' in module 'MIPS_32_1P_MUL_DIV' in file '/users/enseig/tuna/ue_vlsi2/rtl/mips_32_1p_mul_div.vhd' on line 2215.
+
+Lors de la synthèse, de nombreux nets ont été remplacé par des zéro's logiques
+
+Le flip_flop associé au net I_RM a été supprimé lors de l'élaboration
+
+Le signal de reset interne (RESET_RX) provient d'un reset externe RESET_N. Le reset interne est synchrone, cela est indiqué par le suffixe du nom du reset (R=register ; X=expection-related)
+Le reset synchrone signifie que le reset est impactant que lors d'un front montant d'horloge (stocké en registre) tandis qu'un reset asynchrone est impactant peu importe l'état de l'horloge a un instant donné.
+
+Un Reset Synchronizer est un composant permettant de synchroniser la propagation d'un signal de reset sur l'horloge du circuit, utile lorsque le signal vient de l'extérieur (comme dans le cas présent) et en général lors de Clock Domain Crossing. Un circuit devrait avoir un Reset Synchroinizer pour deux raisons:
+	* Si le reset est asynchrone, la levée du signal peu avoir lieu n'importe quand mais l'impact du reset est lors de son passage à l'état bas. Ce passage doit arriver lors d'un front montant d'horloge, et donc doit être synchrone.
+	* Si le reset provient de l'extérieur, un Reset Synchronizer réduit (voire quasi-annule) tout risque de propagation de méta-stabilité

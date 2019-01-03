@@ -1,0 +1,22 @@
+/*******************************************************
+ Synopsys Technology File
+
+ genstf version 6.4
+...
+Process values given:
+  Library nominal:                 1.2
+  Tech-file best case:             1.2
+  Tech-file centre:                1.2
+  Tech-file worst case:            1.2
+Voltage values given:
+  Library nominal:                 1.08
+  Tech-file best case:             1.20
+  Tech-file centre:                1.08
+  Tech-file worst case:            1.0
+Temperature values given:
+  Library nominal:                 85
+  Tech-file best case:             25
+  Tech-file centre:                125
+  Tech-file worst case:            125
+
+  *******************************************************/

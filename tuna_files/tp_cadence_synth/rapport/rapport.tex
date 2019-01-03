@@ -30,7 +30,7 @@ Two types of cell libraries are available:
 \code{\_Best.lib} and \code{\_Worst.lib}. The difference between these libraries
 lies in the timing arcs of their cells : while the Best Library contains Best-Case timings,
 the Worst Library contains the Worst-Case equivalents. Each timing arcs are estimated via
-different PVT parameters (\textbf{Process - Voltage - Temperature}). These parameters an be
+different PVT parameters (\textbf{Process - Voltage - Temperature}). These parameters can be
 found in the headers of each library.
 
 \lstinputlisting{cmos_120nm_core_Worst_header.txt}
@@ -111,8 +111,8 @@ cannot predict the end of a meta-stable state, we know for sure that it won't pe
 setting itself for good.
 
 Let $\epsilon$ be the probability for an asynchronous reset to bring a flip-flop to a meta-stable state.
-For $n$ being the number of flip-flops on a given datapath, the probability of its output being still
-metastable is equals to $\epsilon^n$. This property makes so that a Reset Synchronizer slims down the
+For $n$ being the number of flip-flops on a given datapath, the probability of meta-stability being propagated
+through the datapath is $\epsilon^n$. This property makes so that a Reset Synchronizer slims down the
 probability of the propagation of meta-stability to virtually none.
 
 \includegraphics[width=15cm]{./reset_synchronizer.png}
@@ -165,7 +165,20 @@ late to the setup time limit by 0.2 nanoseconds and no inputs will actually be s
   \includegraphics[width=14cm]{./timing_problem.png}
 \end{center}
 
-No sequential element in our design will manage to actully retain transmitted signals.
+Let us actually specify this input delay to our .sdc file and check what the timing report tells us.
+We can see that we do not have any more "Inputs without clocked external delays".
+
+\subsection{Reg-To-Output}
+We want to constraint the outputs of our design to a delay of 1.2 nanoseconds. After adding this to our sdc file,
+we can see in our timing report that all our inputs and outputs have delays specified. Unfortunately, when we read
+the entire timing report we can see, as expected, that there are timing violations.
+
+This time, the worst path starts from the RD\_RE register and ends at D\_SYNC. The total delay is 12.542 nanoseconds,
+which is really long. This is due to the definition of our inputs and outputs delays. Our clock definition impose a
+capture time of 2 ns, which means our critical path, with our specified in/out delays, is too long for our clock
+frequency. The timing slack is of -10.542 nanoseconds.
+
+\section{Report timing}
 
 
 \end{document}

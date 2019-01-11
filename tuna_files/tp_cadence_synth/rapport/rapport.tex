@@ -65,16 +65,34 @@ Inverted and 1x Drive".
 
 \section{Elaborate}
 
-The eaboration process does not differ from the Synthesis per se. The elaboration step
+The elaboration process does not differ from the Synthesis per se. The elaboration step
 is the conversion of the RTL description to a model where every instance object (signal,
-process, arrays, etc) is converted into a component (adder, multiplexer, register, etc).
+process, arrays, etc) is converted into a numeric component (adder, multiplexer, register, etc).
 This step is part of the Synthesis process.
+Quote : "The first step, elaboration, is reading in your RTL file (which is text) and recognizing
+bits of code that represent real hardware structures. Once recognized, these are converted (in
+Vivado synthesis case) into "generic technology cells" - abstract things like registers, adders,
+comparators, multiplexers, arbitrarily wide gates, etc..."
+
+So elaboration creates the netlist of {\bf generic} technology cells.
+
+The mapping process will consist in associating a cell from the chosen
+specific library to the generic cells.
+
+Example of RTL design before ekaboration/synthesis : ...
+After elaboration : ...
+After syntesis : ...
 
 \section{Check design}
+
+After looking at the report of the Design Check, it seems like there isn't any major warning. Still,
+we have notes regarding "Unloaded Sequential Pins", "Assigns" \& "Constant Hierarchical Pins". None of
+these notes necessarily impact the functionnality of the design.
 
 \section{Synthesis}
 
 \section{Reset}
+\subsection{Synchronous \& asynchronous resets}
 There are two reset signals in the design :
 \begin{enumerate}
   \item RESET\_N is the external reset signal. Its whereabouts are not bound by any timing
@@ -85,10 +103,10 @@ There are two reset signals in the design :
 \end{enumerate}
 
 First we should precise that while the activation of the reset ($0 \rightarrow 1$) is asynchronous,
-its deactivation ($1 \rightarrow 0$) has to be synchronized with the clock. The design itself is
-synchronous and the transition from the reset state to the initialization state is synchronous as
-well. This is the utility of the RESET\_RX register.
+its deactivation ($1 \rightarrow 0$) has to be synchronized with the clock, because all
+the components in the design are sequential.
 
+\subsection{Hazards of meta-stability}
 Still the external reset is a potential hazard for the design, as it comes from the outside. We cannot
 simply assume that the propagation of the signal was flawless and must consider that it may have
 had issues on its way:
@@ -98,22 +116,19 @@ had issues on its way:
   \item The external reset may be already asynchronous.
 \end{enumerate}
 In any case, the external reset signal may arrive in the design without respecting constraints relative
-to the setup time of its imminent receptor (a flip-flop, for example).
-All these possibilities may bring the value of the signal to a metastable state, where its value is
-indetermined before setting itself to a non-deterministic, but stable value. The probability of such an
-event is rare but not impossible, and the propagation of such a signal may bring the design to a
-non-deterministic state, ruining the function of the design.
+to the setup time of its imminent receiver (a flip-flop, for example). All these possibilities may bring
+the value of the signal to a metastable state. A case of meta-stability occurs when the signal is captured by a receiver
+during an edge, leading to an undetermined value being captured ($\frac{1}{2}$). In the case of a state register, for a
+Finite-State-Machine, the capture of a meta-stable value may lead the FSM to an undetermined state, ruining its
+functionnality. We have to prevent such a case from occuring.
 
-A Reset Synchronizer is a component with an asynchronous signal as input and an asynchronous signal as
-output. In order to prevent the propagation of a metastable value, the reset synchronizer uses the
-probabilistic properties of meta-stability : a meta-stable state is always short-lived, and while we
-cannot predict the end of a meta-stable state, we know for sure that it won't perdure long before
-setting itself for good.
+\subsection{Reset Synchronizers}
+A Reset Synchronizer is a component which takes an asynchronous signal as input and outputs a synchronous signal. Every
+time the signal crosses a flip-flop of the Reset Synchronizer, its chances of still being meta-stable ddecreases.
 
 Let $\epsilon$ be the probability for an asynchronous reset to bring a flip-flop to a meta-stable state.
 For $n$ being the number of flip-flops on a given datapath, the probability of meta-stability being propagated
-through the datapath is $\epsilon^n$. This property makes so that a Reset Synchronizer slims down the
-probability of the propagation of meta-stability to virtually none.
+through the datapath is $\epsilon^n$.
 
 \includegraphics[width=15cm]{./reset_synchronizer.png}
 \begin{center}
@@ -127,6 +142,7 @@ This model was implemented to the design. The verification of the functionnality
   {\it Waveform of the Reset Synchronizer using GTKWave}
 \end{center}
 
+\newpage
 \lstinputlisting[language=vhdl,caption={RTL description of the Reset Synchronizer}]{../reset_synchronizer.vhd}
 
 \newpage
@@ -136,7 +152,7 @@ From the area report, the design is composed of 13878 cells, and has a surface o
 
 The timing report gives the longest datapath of our design. We can see that its start point is the I\_RI register
 and its end point the NEXTPC\_RD register. The total delay of this datapath is 11.538ns.
-The maximum frequency, evaluated only from this timing report, equals $\dfrac{1}{11538\times10^{-15}}$ Hz, or
+The maximum frequency, evaluated only from this timing report, equals $\dfrac{1}{11538\times10^{-12}}$ Hz, or
 approximately 86.670 GHz.
 The timing slack of a connection is the difference between its required time and its arrival time. In our design
 the timing slack is UNCONSTRAINED because no timing constraints have been specified yet. Because of this omission,

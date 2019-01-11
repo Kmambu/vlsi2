@@ -35,3 +35,6 @@
 !*.png
 !*.jpg
 !*.jpeg
+
+# (temporary) logs
+*log*

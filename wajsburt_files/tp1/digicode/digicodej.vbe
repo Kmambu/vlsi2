@@ -1,0 +1,101 @@
+-- VHDL data flow description generated from `digicodej`
+--		date : Wed Jan 23 15:54:03 2019
+
+
+-- Entity Declaration
+
+ENTITY digicodej IS
+  PORT (
+  ck : in BIT;	-- ck
+  vdd : in BIT;	-- vdd
+  vss : in BIT;	-- vss
+  reset : in BIT;	-- reset
+  jour : in BIT;	-- jour
+  o : in BIT;	-- o
+  kbd : in BIT;	-- kbd
+  i : in bit_vector(3 DOWNTO 0) ;	-- i
+  porte : out BIT;	-- porte
+  alarm : out BIT	-- alarm
+  );
+END digicodej;
+
+
+-- Architecture Declaration
+
+ARCHITECTURE VBE OF digicodej IS
+  SIGNAL circuit_ep : REG_VECTOR(2 DOWNTO 0) REGISTER;	-- circuit_ep
+  SIGNAL circuit_ep_d4 : BIT;		-- circuit_ep_d4
+  SIGNAL circuit_ef_d4 : BIT;		-- circuit_ef_d4
+  SIGNAL circuit_ep_d3 : BIT;		-- circuit_ep_d3
+  SIGNAL circuit_ef_d3 : BIT;		-- circuit_ef_d3
+  SIGNAL circuit_ep_d2 : BIT;		-- circuit_ep_d2
+  SIGNAL circuit_ef_d2 : BIT;		-- circuit_ef_d2
+  SIGNAL circuit_ep_d1 : BIT;		-- circuit_ep_d1
+  SIGNAL circuit_ef_d1 : BIT;		-- circuit_ef_d1
+  SIGNAL circuit_ep_alarme : BIT;		-- circuit_ep_alarme
+  SIGNAL circuit_ef_alarme : BIT;		-- circuit_ef_alarme
+  SIGNAL circuit_ep_ouvert : BIT;		-- circuit_ep_ouvert
+  SIGNAL circuit_ef_ouvert : BIT;		-- circuit_ef_ouvert
+  SIGNAL circuit_ep_idle : BIT;		-- circuit_ep_idle
+  SIGNAL circuit_ef_idle : BIT;		-- circuit_ef_idle
+  SIGNAL circuit_ef : BIT_VECTOR(2 DOWNTO 0);	-- circuit_ef
+
+BEGIN
+  circuit_ef(0) <= (circuit_ef_idle OR circuit_ef_d1 OR 
+circuit_ef_d2);
+  circuit_ef(1) <= (circuit_ef_idle OR circuit_ef_ouvert OR 
+circuit_ef_d3);
+  circuit_ef(2) <= (circuit_ef_d2 OR circuit_ef_d3 OR circuit_ef_d4);
+  circuit_ef_idle <= ((circuit_ep_idle AND ((NOT(kbd) AND NOT(jour)) 
+OR (NOT(o) AND jour))) OR circuit_ep_ouvert);
+  circuit_ep_idle <= (circuit_ep(1) AND circuit_ep(0));
+  circuit_ef_ouvert <= ((circuit_ep_d4 AND i(0) AND NOT(i(3)) AND i(1) 
+AND i(2) AND kbd) OR (circuit_ep_idle AND o AND jour
+));
+  circuit_ep_ouvert <= (NOT(circuit_ep(2)) AND circuit_ep(1) AND NOT(
+circuit_ep(0)));
+  circuit_ef_alarme <= (circuit_ep_alarme OR (circuit_ep_d1 AND (NOT(
+i(0)) OR i(3) OR NOT(i(1)) OR i(2)) AND kbd) OR (
+circuit_ep_d2 AND (i(0) OR NOT(i(3)) OR NOT(i(1)) OR i(2)) AND
+ kbd) OR (circuit_ep_d3 AND (NOT(i(0)) OR i(3) OR 
+i(1) OR i(2)) AND kbd) OR (circuit_ep_d4 AND (NOT(
+i(0)) OR i(3) OR NOT(i(1)) OR NOT(i(2))) AND kbd) OR 
+(circuit_ep_idle AND (NOT(i(0)) OR i(3) OR i(1) OR
+ NOT(i(2))) AND kbd AND NOT(jour)));
+  circuit_ep_alarme <= (NOT(circuit_ep(2)) AND NOT(circuit_ep(1)) AND 
+NOT(circuit_ep(0)));
+  circuit_ef_d1 <= ((circuit_ep_d1 AND NOT(kbd)) OR (circuit_ep_idle
+ AND i(0) AND NOT(i(3)) AND NOT(i(1)) AND i(2) AND
+ kbd AND NOT(jour)));
+  circuit_ep_d1 <= (NOT(circuit_ep(2)) AND NOT(circuit_ep(1)) AND 
+circuit_ep(0));
+  circuit_ef_d2 <= ((circuit_ep_d1 AND i(0) AND NOT(i(3)) AND i(1) 
+AND NOT(i(2)) AND kbd) OR (circuit_ep_d2 AND NOT(kbd
+)));
+  circuit_ep_d2 <= (circuit_ep(2) AND circuit_ep(0));
+  circuit_ef_d3 <= ((circuit_ep_d2 AND NOT(i(0)) AND i(3) AND i(1) 
+AND NOT(i(2)) AND kbd) OR (circuit_ep_d3 AND NOT(kbd
+)));
+  circuit_ep_d3 <= (circuit_ep(2) AND circuit_ep(1));
+  circuit_ef_d4 <= ((circuit_ep_d3 AND i(0) AND NOT(i(3)) AND NOT(
+i(1)) AND NOT(i(2)) AND kbd) OR (circuit_ep_d4 AND 
+NOT(kbd)));
+  circuit_ep_d4 <= (circuit_ep(2) AND NOT(circuit_ep(1)) AND NOT(
+circuit_ep(0)));
+  label0 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep(0) <= GUARDED (circuit_ef(0) OR reset);
+  END BLOCK label0;
+  label1 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep(1) <= GUARDED (circuit_ef(1) OR reset);
+  END BLOCK label1;
+  label2 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep(2) <= GUARDED (circuit_ef(2) AND NOT(reset));
+  END BLOCK label2;
+
+alarm <= circuit_ep_alarme;
+
+porte <= circuit_ep_ouvert;
+END;

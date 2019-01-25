@@ -1,0 +1,91 @@
+-- VHDL data flow description generated from `digicodeo_boom`
+--		date : Wed Jan 23 15:54:04 2019
+
+
+-- Entity Declaration
+
+ENTITY digicodeo_boom IS
+  PORT (
+  ck : in BIT;	-- ck
+  vdd : in BIT;	-- vdd
+  vss : in BIT;	-- vss
+  reset : in BIT;	-- reset
+  jour : in BIT;	-- jour
+  o : in BIT;	-- o
+  kbd : in BIT;	-- kbd
+  i : in bit_vector(3 DOWNTO 0) ;	-- i
+  porte : out BIT;	-- porte
+  alarm : out BIT	-- alarm
+  );
+END digicodeo_boom;
+
+
+-- Architecture Declaration
+
+ARCHITECTURE behaviour_data_flow OF digicodeo_boom IS
+  SIGNAL circuit_ep : REG_VECTOR(6 DOWNTO 0) REGISTER;	-- circuit_ep
+  SIGNAL aux0 : BIT;		-- aux0
+  SIGNAL aux1 : BIT;		-- aux1
+  SIGNAL aux2 : BIT;		-- aux2
+  SIGNAL aux3 : BIT;		-- aux3
+  SIGNAL aux4 : BIT;		-- aux4
+  SIGNAL aux5 : BIT;		-- aux5
+
+BEGIN
+  aux5 <= (aux1 OR i(1));
+  aux4 <= (circuit_ep(6) AND NOT(jour));
+  aux3 <= NOT(NOT(aux2) AND NOT(i(2)));
+  aux2 <= NOT(NOT(aux1) AND i(1));
+  aux1 <= NOT(i(0) AND NOT(i(3)));
+  aux0 <= (NOT(reset) AND NOT(kbd));
+  label0 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep (0) <= GUARDED (((kbd OR circuit_ep(0)) AND NOT(reset) AND i(0) 
+AND NOT(i(3)) AND NOT(i(1)) AND NOT(i(2)) AND 
+circuit_ep(1)) OR (aux0 AND circuit_ep(0)));
+  END BLOCK label0;
+  label1 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep (1) <= GUARDED ((aux0 AND circuit_ep(1)) OR (circuit_ep(2) AND 
+NOT(reset) AND kbd AND NOT(i(0)) AND i(3) AND i(1) 
+AND NOT(i(2))));
+  END BLOCK label1;
+  label2 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep (2) <= GUARDED ((NOT(kbd) OR (NOT(aux3) AND circuit_ep(3))) AND 
+(circuit_ep(2) OR kbd) AND NOT(reset));
+  END BLOCK label2;
+  label3 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep (3) <= GUARDED ((aux0 AND circuit_ep(3)) OR (aux4 AND NOT(reset)
+ AND kbd AND i(0) AND NOT(i(3)) AND NOT(i(1)) AND 
+i(2)));
+  END BLOCK label3;
+  label4 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep (4) <= GUARDED ((((aux2 OR NOT(i(2))) AND circuit_ep(0)) OR (
+aux3 AND circuit_ep(3)) OR (((aux4 AND aux5) OR 
+circuit_ep(2) OR circuit_ep(4)) AND i(2)) OR (((circuit_ep(2) 
+AND (i(0) OR NOT(i(3)) OR NOT(i(1)))) OR aux4 OR 
+circuit_ep(4)) AND NOT(i(2))) OR circuit_ep(1)) AND (aux4 OR 
+circuit_ep(2) OR circuit_ep(4) OR aux5 OR i(2) OR 
+circuit_ep(3) OR circuit_ep(0)) AND NOT(reset) AND (kbd OR 
+circuit_ep(4)));
+  END BLOCK label4;
+  label5 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep (5) <= GUARDED ((NOT(reset) AND kbd AND i(0) AND NOT(i(3)) AND 
+i(1) AND i(2) AND circuit_ep(0)) OR (circuit_ep(6) 
+AND jour AND NOT(reset) AND o));
+  END BLOCK label5;
+  label6 : BLOCK ((NOT((ck'STABLE)) AND ck) = '1')
+  BEGIN
+    circuit_ep (6) <= GUARDED ((circuit_ep(6) AND (jour OR NOT(kbd)) AND NOT(o)
+) OR (aux4 AND NOT(kbd)) OR circuit_ep(5) OR reset
+);
+  END BLOCK label6;
+
+alarm <= circuit_ep(4);
+
+porte <= circuit_ep(5);
+END;

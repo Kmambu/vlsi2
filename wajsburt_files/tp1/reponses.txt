@@ -1,0 +1,7 @@
+# UE TOOLS - TME1
+# Kevin Mambu & Nicolas Phan
+
+## Réalisation d'un compteur
+
+- Si le reset n'est pas positionné en début de pattern, les éléments séquentiels de la machine à états contiennent des valeurs indéterminées.
+- 

@@ -1,0 +1,136 @@
+
+entity circuit is
+    port(
+        ck        : in bit;
+        vdd       : in bit;
+        vss       : in bit;
+        reset     : in bit;
+        jour      : in bit;
+        O         : in bit;
+        kbd       : in bit;
+        i         : in bit_vector(3 downto 0);
+        porte     : out bit;
+        alarm     : out bit
+    );
+end circuit;
+
+architecture MOORE of circuit is
+
+type ETAT_TYPE is (IDLE, OUVERT, ALARME, D1, D2, D3, D4);
+signal EF, EP : ETAT_TYPE;
+
+-- pragma CURRENT_STATE EP
+-- pragma NEXT_STATE EF
+-- pragma CLOCK CK
+
+begin
+
+-- Transition and generation
+process ( EP, reset, jour, O, kbd, i )
+begin
+
+    -- Transition function
+    if ( reset = '1' ) then
+        EF <= IDLE;
+    else
+    case EP is
+        when IDLE =>
+        if    ( (jour = '1' and o   = '1') ) then                 -- Day and press O
+            EF <= OUVERT;
+        elsif ( (jour = '0' and kbd = '1' and i = "0101" ) ) then    -- Night and press '5'
+            EF <= D1;
+        elsif ( (jour = '0' and kbd = '1' and i /= "0101" ) ) then    -- Night and press other than '5'
+            EF <= ALARME;
+        else
+            EF <= IDLE;
+        end if;
+
+        when D1 =>
+        if    ( kbd = '1' and i = "0011" ) then                      -- Press '3'
+            EF <= D2;
+        elsif ( kbd = '0' ) then
+            EF <= D1;
+        else
+            EF <= ALARME;
+        end if;
+
+        when D2 =>
+        if    ( kbd = '1' and i = "1010" ) then                      -- Press 'A'
+            EF <= D3;
+        elsif ( kbd = '0' ) then
+            EF <= D2;
+        else
+            EF <= ALARME;
+        end if;
+
+        when D3 =>
+        if    ( kbd = '1' and i = "0001" ) then                      -- Press '1'
+            EF <= D4;
+        elsif ( kbd = '0' ) then
+            EF <= D3;
+        else
+            EF <= ALARME;
+        end if;
+
+        when D4 =>
+        if    ( kbd = '1' and i = "0111" ) then                      -- Press '7'
+            EF <= OUVERT;
+        elsif ( kbd = '0' ) then
+            EF <= D4;
+        else
+            EF <= ALARME;
+        end if;
+
+        when OUVERT =>
+            EF <= IDLE;
+        
+        when ALARME =>
+        if (reset = '1') then
+            EF <= IDLE;
+        else
+            EF <= ALARME;
+        end if;
+
+        when others => assert ('1')
+        report "etat illegal";
+    end case;
+    end if;
+
+    -- Generation function
+    case EP is
+        when IDLE =>
+            porte <= '0';
+            alarm <= '0';
+        when D1 =>
+            porte <= '0';
+            alarm <= '0';
+        when D2 =>
+            porte <= '0';
+            alarm <= '0';
+        when D3 =>
+            porte <= '0';
+            alarm <= '0';
+        when D4 =>
+            porte <= '0';
+            alarm <= '0';
+        when OUVERT =>
+            porte <= '1';
+            alarm <= '0';
+        when ALARME =>
+            porte <= '0';
+            alarm <= '1';
+
+    when others => assert ('1')
+        report "etat illegal";
+    end case;
+
+end process;
+
+process( ck )
+begin
+    if (ck='1' and not ck'stable) then
+    EP <= EF;
+    end if;
+end process;
+
+end MOORE;
